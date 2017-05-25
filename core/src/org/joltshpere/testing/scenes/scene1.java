@@ -52,9 +52,6 @@ public class scene1 implements Screen {
 	void update(float dv) {
 		if (Gdx.input.isKeyJustPressed(Keys.TAB)) game.switchScene();
 		
-		player1.update(contLis.player1Contact, dv, game.width, game.height);
-		player2.update(contLis.player2Contact, dv, game.width, game.height);
-		
 		if (Gdx.input.isKeyPressed(Keys.LEFT)) player1.moveLeft();
 		if (Gdx.input.isKeyPressed(Keys.RIGHT)) player1.moveRight();
 		if (Gdx.input.isKeyJustPressed(Keys.UP)) player1.jump();
@@ -66,6 +63,18 @@ public class scene1 implements Screen {
 		if (Gdx.input.isKeyJustPressed(Keys.W)) player2.jump();
 			if (Gdx.input.isKeyPressed(Keys.W)) player2.jumpHold();
 		if (Gdx.input.isKeyPressed(Keys.S)) player2.smash(); else player2.notSmashing();
+		
+		if (player1.wasKnockedOut) {
+			player2.otherPlayerKnockedOut();
+			player1.wasKnockedOut = false;
+		}
+		if (player2.wasKnockedOut) {
+			player1.otherPlayerKnockedOut();
+			player2.wasKnockedOut = false;
+		}
+		
+		player1.update(contLis.player1Contact, dv, game.width, game.height);
+		player2.update(contLis.player2Contact, dv, game.width, game.height);
 		
 	}
 	

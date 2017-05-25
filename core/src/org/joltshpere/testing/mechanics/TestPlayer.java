@@ -44,9 +44,10 @@ public class TestPlayer {
 	public boolean canHold = false;
 	public boolean canSmash = false;
 	public boolean canSmashJump = false;
-	public boolean previousSmash = false;
+	public boolean hadPreviouslySmashed = false;
 	public boolean shouldLocationIndicate = false;
 	public boolean isGrounded = false;
+	public boolean wasKnockedOut = false;
 	
 	public int jumpDelay = 5;
 	public float jumpTimer = jumpDelay;
@@ -96,71 +97,33 @@ public class TestPlayer {
 	
 	public void update(int contact, float delta, int width, int height) {
 		dv = delta;
-		arenaSpace = 0.5f * height;
+		arenaSpace = 0.5f * height; //DO NOT REMOVE THIS LINE AT ALL COSTS,
+		//I WAS TOO LAZY TO PLACE IT IN THE CONSTRUCTOR BECAUSE IT DOESNT HAVE A
+		// WIDTH AND HEIGHT VARIABLE, MIGHT DO IT LATER, LOL, ACTUALLY THE TIME IT TOOK 
+		// ME TO WRITE ALL OF THIS, I PROBBABLY COULD OF CHANGED THE CODE, YOLO!
 		
 		/* Basic Values if on the Ground */
-		
-		if (contact > 0) {//if on ground
-			hasDoubled = false; //reset double jump
-			canJump = true;
-			jumpTimer = jumpDelay;
-			isGrounded = true;
-		} 
-		else isGrounded = false;
+		checkIfGrounded(contact);
 		
 		/* Creates timer to jump while bouncing around */
-		
-		if (jumpTimer > 0) {
-			canJump = true;
-			jumpTimer -= 60 * dv; 
-		}
-		else canJump = false;
-			//similar, except timer for held jumps
-			if (jumpHoldTimer > 0) {
-				canHold = true;
-				jumpHoldTimer -= 60 * dv;
-			} 
-			else canHold = false;
+		updateJumpTimers(dv);
 			
 		/* Allows for smash jump after end of smash */
-		
-		if (smashJumpPeriod > 0) {
-			canSmashJump = true;
-			smashJumpPeriod -= 60 * dv;
-		}
-		else if (canSmashJump){
-			smashCooldown=0;
-			canSmashJump = false;
-			isSmashJumping = false;
-			body.setLinearVelocity(body.getLinearVelocity().x * 0.5f, body.getLinearVelocity().y * 0.05f); //not absolute stop
-		}
+		updateSmashJump(dv);
 		
 		/* Sequence to preform if no longer smashing */
-		
-		if (!isSmashing) {
-			if (smashCooldown == 0) {
-				smashTimer = smashLength;
-				canSmash = false;
-				smashCooldown = 1;
-				body.destroyFixture(fixture);
-				fixture = body.createFixture(fdefBall);
-				fixture.setUserData("p" + player);
-			}
-			else {
-				if (smashCooldown > smashCooldownLength) canSmash = true;
-				else smashCooldown += 60 * dv;
-			}			
-		}
+		if (!isSmashing) notCurrentlySmashing();
 		
 		// Updates Indicator
 		updateLocationIndicator(width, height);
+		
 		// Checks if Dead
 		checkIfDead(width, height);
 		
+		//lowers energy
 		if (!isSmashing && !isSmashJumping) weakenPlayer();
 		
 	}
-
 	
 	public void shapeRender(ShapeRenderer sRender, Color skinColor) {
 		
@@ -201,6 +164,16 @@ public class TestPlayer {
 		
 	}
 	
+	void checkIfGrounded(int contact) {
+		if (contact > 0) {//if on ground
+			hasDoubled = false; //reset double jump
+			canJump = true;
+			jumpTimer = jumpDelay;
+			isGrounded = true;
+		} 
+		else isGrounded = false;
+	}
+	
 	public void moveLeft () {
 		moveHorizontal(-1);
 	}
@@ -228,7 +201,19 @@ public class TestPlayer {
 		}	
 	}
 	
-	
+	void updateJumpTimers(float dv) {
+		if (jumpTimer > 0) {
+			canJump = true;
+			jumpTimer -= 60 * dv; 
+		}
+		else canJump = false;
+			//similar, except timer for held jumps
+			if (jumpHoldTimer > 0) {
+				canHold = true;
+				jumpHoldTimer -= 60 * dv;
+			} 
+			else canHold = false;
+	}
 	
 	public void jump () { //no delta because single impulse
 		if (canJump) { //if on ground
@@ -266,7 +251,18 @@ public class TestPlayer {
 		body.applyForceToCenter(0, 2000000, true);
 		
 	}
-	
+	void updateSmashJump(float dv) {
+		if (smashJumpPeriod > 0) {
+			canSmashJump = true;
+			smashJumpPeriod -= 60 * dv;
+		}
+		else if (canSmashJump){
+			smashCooldown=0;
+			canSmashJump = false;
+			isSmashJumping = false;
+			body.setLinearVelocity(body.getLinearVelocity().x * 0.5f, body.getLinearVelocity().y * 0.05f); //not absolute stop
+		}
+	}
 	
 	public void smash() {
 		if (canSmash) {
@@ -278,7 +274,7 @@ public class TestPlayer {
 			if (!isGrounded) body.applyForceToCenter(0, -30000 * dv, true);
 			isSmashing = true;
 			if (canJump) canSmashJump = true;
-			previousSmash = true;
+			hadPreviouslySmashed = true;
 			smashTimer-=60*dv;
 			if (smashTimer < 0) canSmash = false;
 				smashCooldown = 0; //resetting cooldown timer
@@ -287,12 +283,26 @@ public class TestPlayer {
 		else isSmashing = false;
 	}
 	public void notSmashing() { 
-		if (previousSmash) {
+		if (hadPreviouslySmashed) {
 			isSmashing = false; 
 			smashJumpPeriod = smashJumpPeriodLength;
-			previousSmash = false;
+			hadPreviouslySmashed = false;
 		}
 		else isSmashing = false;  
+	}
+	void notCurrentlySmashing() {
+		if (smashCooldown == 0) {
+			smashTimer = smashLength;
+			canSmash = false;
+			smashCooldown = 1;
+			body.destroyFixture(fixture);
+			fixture = body.createFixture(fdefBall);
+			fixture.setUserData("p" + player);
+		}
+		else {
+			if (smashCooldown > smashCooldownLength) canSmash = true;
+			else smashCooldown += 60 * dv;
+		}
 	}
 	
 	
@@ -303,6 +313,15 @@ public class TestPlayer {
 		body.setLinearVelocity(0, 0);
 		body.setTransform(startingLocation.x / ppm, startingLocation.y / ppm, 0);
 		
+		resetEnergy();
+		wasKnockedOut = true;
+	}
+	
+	public void otherPlayerKnockedOut() {
+		resetEnergy();
+	}
+	
+	public void resetEnergy() {
 		createFixtureDefs();
 		energyTimer = 0;
 	}
