@@ -1,9 +1,9 @@
-package org.joltshpere.testing.scenes;
+package org.joltsphere.testing.scenes;
 
-import org.joltshpere.testing.main.JoltSphereTesting;
-import org.joltshpere.testing.mechanics.TestEntities;
-import org.joltshpere.testing.mechanics.TestPlayer;
-import org.joltshpere.testing.mechanics.TestingContactListener;
+import org.joltsphere.testing.main.JoltSphereTesting;
+import org.joltsphere.testing.mechanics.TestEntities;
+import org.joltsphere.testing.mechanics.TestPlayer;
+import org.joltsphere.testing.mechanics.TestingContactListener;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
@@ -15,7 +15,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
 import com.badlogic.gdx.physics.box2d.World;
 
-public class scene1 implements Screen {
+public class Scene1 implements Screen {
 
 	final JoltSphereTesting game;
 	 
@@ -29,7 +29,7 @@ public class scene1 implements Screen {
 	
 	float ppm = JoltSphereTesting.ppm;
 	
-	public scene1 (final JoltSphereTesting gam) {
+	public Scene1 (final JoltSphereTesting gam) {
 		game = gam;
 		
 		world = new World(new Vector2(0, -9.8f), false); //ignore inactive objects false
@@ -52,6 +52,9 @@ public class scene1 implements Screen {
 	void update(float dv) {
 		if (Gdx.input.isKeyJustPressed(Keys.TAB)) game.switchScene();
 		
+		player1.update(contLis.player1Contact, dv, game.width, game.height);
+		player2.update(contLis.player2Contact, dv, game.width, game.height);
+		
 		if (Gdx.input.isKeyPressed(Keys.LEFT)) player1.moveLeft();
 		if (Gdx.input.isKeyPressed(Keys.RIGHT)) player1.moveRight();
 		if (Gdx.input.isKeyJustPressed(Keys.UP)) player1.jump();
@@ -65,16 +68,13 @@ public class scene1 implements Screen {
 		if (Gdx.input.isKeyPressed(Keys.S)) player2.smash(); else player2.notSmashing();
 		
 		if (player1.wasKnockedOut) {
-			player2.otherPlayerKnockedOut();
 			player1.wasKnockedOut = false;
+			player2.otherPlayerKnockedOut();
 		}
 		if (player2.wasKnockedOut) {
-			player1.otherPlayerKnockedOut();
 			player2.wasKnockedOut = false;
+			player1.otherPlayerKnockedOut();
 		}
-		
-		player1.update(contLis.player1Contact, dv, game.width, game.height);
-		player2.update(contLis.player2Contact, dv, game.width, game.height);
 		
 	}
 	

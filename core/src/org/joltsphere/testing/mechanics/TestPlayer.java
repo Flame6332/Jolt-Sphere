@@ -1,6 +1,6 @@
-package org.joltshpere.testing.mechanics;
+package org.joltsphere.testing.mechanics;
 
-import org.joltshpere.testing.main.JoltSphereTesting;
+import org.joltsphere.testing.main.JoltSphereTesting;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
@@ -44,7 +44,7 @@ public class TestPlayer {
 	public boolean canHold = false;
 	public boolean canSmash = false;
 	public boolean canSmashJump = false;
-	public boolean hadPreviouslySmashed = false;
+	public boolean previousSmash = false;
 	public boolean shouldLocationIndicate = false;
 	public boolean isGrounded = false;
 	public boolean wasKnockedOut = false;
@@ -97,10 +97,35 @@ public class TestPlayer {
 	
 	public void update(int contact, float delta, int width, int height) {
 		dv = delta;
+		arenaSpace = 0.5f * height;
+		
+		/*	dv = delta;
 		arenaSpace = 0.5f * height; //DO NOT REMOVE THIS LINE AT ALL COSTS,
 		//I WAS TOO LAZY TO PLACE IT IN THE CONSTRUCTOR BECAUSE IT DOESNT HAVE A
 		// WIDTH AND HEIGHT VARIABLE, MIGHT DO IT LATER, LOL, ACTUALLY THE TIME IT TOOK 
 		// ME TO WRITE ALL OF THIS, I PROBBABLY COULD OF CHANGED THE CODE, YOLO!
+		
+		/* Basic Values if on the Ground 
+		checkIfGrounded(contact);
+		
+		/* Creates timer to jump while bouncing around 
+		updateJumpTimers(dv);
+			
+		/* Allows for smash jump after end of smash 
+		updateSmashJump(dv);
+		
+		/* Sequence to preform if no longer smashing 
+		if (!isSmashing) notCurrentlySmashing();
+		
+		// Updates Indicator
+		updateLocationIndicator(width, height);
+		
+		// Checks if Dead
+		checkIfDead(width, height);
+		
+		//lowers energy
+		if (!isSmashing && !isSmashJumping) weakenPlayer();
+		*/
 		
 		/* Basic Values if on the Ground */
 		checkIfGrounded(contact);
@@ -116,14 +141,13 @@ public class TestPlayer {
 		
 		// Updates Indicator
 		updateLocationIndicator(width, height);
-		
 		// Checks if Dead
 		checkIfDead(width, height);
 		
-		//lowers energy
 		if (!isSmashing && !isSmashJumping) weakenPlayer();
 		
 	}
+
 	
 	public void shapeRender(ShapeRenderer sRender, Color skinColor) {
 		
@@ -164,7 +188,7 @@ public class TestPlayer {
 		
 	}
 	
-	void checkIfGrounded(int contact) {
+	private void checkIfGrounded(int contact) {
 		if (contact > 0) {//if on ground
 			hasDoubled = false; //reset double jump
 			canJump = true;
@@ -201,19 +225,7 @@ public class TestPlayer {
 		}	
 	}
 	
-	void updateJumpTimers(float dv) {
-		if (jumpTimer > 0) {
-			canJump = true;
-			jumpTimer -= 60 * dv; 
-		}
-		else canJump = false;
-			//similar, except timer for held jumps
-			if (jumpHoldTimer > 0) {
-				canHold = true;
-				jumpHoldTimer -= 60 * dv;
-			} 
-			else canHold = false;
-	}
+	
 	
 	public void jump () { //no delta because single impulse
 		if (canJump) { //if on ground
@@ -238,6 +250,20 @@ public class TestPlayer {
 		}
 	}
 	
+	private void updateJumpTimers(float dv) {
+		if (jumpTimer > 0) {
+			canJump = true;
+			jumpTimer -= 60 * dv; 
+		}
+		else canJump = false;
+			//similar, except timer for held jumps
+			if (jumpHoldTimer > 0) {
+				canHold = true;
+				jumpHoldTimer -= 60 * dv;
+			} 
+			else canHold = false;
+	}
+	
 	private void smashJump() {
 		isSmashJumping = true;
 		
@@ -249,9 +275,8 @@ public class TestPlayer {
 		body.setAngularVelocity(body.getAngularVelocity() * 0.3f);
 		body.setLinearVelocity(body.getLinearVelocity().x * 0.3f, body.getLinearVelocity().y * 0.1f);
 		body.applyForceToCenter(0, 2000000, true);
-		
 	}
-	void updateSmashJump(float dv) {
+	private void updateSmashJump(float dv) {
 		if (smashJumpPeriod > 0) {
 			canSmashJump = true;
 			smashJumpPeriod -= 60 * dv;
@@ -264,6 +289,7 @@ public class TestPlayer {
 		}
 	}
 	
+	
 	public void smash() {
 		if (canSmash) {
 			if (smashTimer == smashLength) {
@@ -274,7 +300,7 @@ public class TestPlayer {
 			if (!isGrounded) body.applyForceToCenter(0, -30000 * dv, true);
 			isSmashing = true;
 			if (canJump) canSmashJump = true;
-			hadPreviouslySmashed = true;
+			previousSmash = true;
 			smashTimer-=60*dv;
 			if (smashTimer < 0) canSmash = false;
 				smashCooldown = 0; //resetting cooldown timer
@@ -283,14 +309,14 @@ public class TestPlayer {
 		else isSmashing = false;
 	}
 	public void notSmashing() { 
-		if (hadPreviouslySmashed) {
+		if (previousSmash) {
 			isSmashing = false; 
 			smashJumpPeriod = smashJumpPeriodLength;
-			hadPreviouslySmashed = false;
+			previousSmash = false;
 		}
 		else isSmashing = false;  
 	}
-	void notCurrentlySmashing() {
+	private void notCurrentlySmashing() {
 		if (smashCooldown == 0) {
 			smashTimer = smashLength;
 			canSmash = false;
@@ -313,17 +339,18 @@ public class TestPlayer {
 		body.setLinearVelocity(0, 0);
 		body.setTransform(startingLocation.x / ppm, startingLocation.y / ppm, 0);
 		
-		resetEnergy();
-		wasKnockedOut = true;
-	}
-	
-	public void otherPlayerKnockedOut() {
+		wasKnockedOut = true; 
+		
 		resetEnergy();
 	}
 	
 	public void resetEnergy() {
 		createFixtureDefs();
 		energyTimer = 0;
+	}
+	
+	public void otherPlayerKnockedOut() {
+		resetEnergy();
 	}
 	
 	void weakenPlayer() {

@@ -1,9 +1,8 @@
-package org.joltshpere.testing.mechanics;
+package org.joltsphere.testing.mechanics;
 
-import org.joltshpere.testing.main.JoltSphereTesting;
+import org.joltsphere.testing.main.JoltSphereTesting;
 
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.ChainShape;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
@@ -25,8 +24,6 @@ public class TestEntities {
 		bdef.position.x = 0;
 		bdef.position.y = 0;
 		 
-		Body body = world.createBody(bdef);
-		
 		ChainShape chain = new ChainShape();
 		Vector2[] v = new Vector2[12];
 		int x = JoltSphereTesting.WIDTH / 2;
@@ -64,7 +61,7 @@ public class TestEntities {
 		fdef.shape = chain;
 		fdef.friction = 1;
 		
-		body.createFixture(fdef).setUserData("ground");
+		world.createBody(bdef).createFixture(fdef).setUserData("ground");
 		
 		chain.dispose();
 		

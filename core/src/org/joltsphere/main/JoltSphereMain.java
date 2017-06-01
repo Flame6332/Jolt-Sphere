@@ -1,4 +1,4 @@
-package org.joltshpere.main;
+package org.joltsphere.main;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;

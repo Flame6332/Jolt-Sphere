@@ -1,9 +1,10 @@
-package org.joltshpere.main.client;
+package org.joltsphere.main.client;
+
+import org.joltsphere.main.JoltSphereMain;
 
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.backends.gwt.GwtApplication;
 import com.badlogic.gdx.backends.gwt.GwtApplicationConfiguration;
-import org.joltshpere.main.JoltSphereMain;
 
 public class HtmlLauncher extends GwtApplication {
 

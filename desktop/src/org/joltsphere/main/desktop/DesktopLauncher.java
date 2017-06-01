@@ -1,9 +1,9 @@
-package org.joltshpere.main.desktop;
+package org.joltsphere.main.desktop;
+
+import org.joltsphere.main.JoltSphereMain;
 
 import com.badlogic.gdx.backends.lwjgl.LwjglApplication;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
-
-import org.joltshpere.main.JoltSphereMain;
 
 public class DesktopLauncher {
 	

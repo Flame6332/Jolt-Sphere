@@ -1,4 +1,4 @@
-package org.joltshpere.testing.mechanics;
+package org.joltsphere.testing.mechanics;
 
 import com.badlogic.gdx.physics.box2d.Contact;
 import com.badlogic.gdx.physics.box2d.ContactImpulse;

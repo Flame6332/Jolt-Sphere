@@ -1,6 +1,6 @@
-package org.joltshpere.testing.main;
+package org.joltsphere.testing.main;
 
-import org.joltshpere.testing.scenes.scene1;
+import org.joltsphere.testing.scenes.Scene1;
 
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
@@ -56,7 +56,7 @@ public class JoltSphereTesting extends Game {
 		view = new ExtendViewport(width, height, cam);
 		phys2Dview = new ExtendViewport(width / ppm, height / ppm, phys2Dcam);
 		
-		this.setScreen(new scene1(this));
+		this.setScreen(new Scene1(this));
 		
 		Gdx.graphics.setVSync(true);
 		
@@ -70,27 +70,27 @@ public class JoltSphereTesting extends Game {
 		Gdx.gl.glClearColor(0, 0, 0, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		
-		super.render();
+		super.render(); //renders in screens
 		
 		Gdx.graphics.setTitle(title + " : " + subtitle + "     FPS: " + Gdx.graphics.getFramesPerSecond());
 
 		if (Gdx.input.isKeyJustPressed(Keys.ENTER) && !Gdx.graphics.isFullscreen()) Gdx.graphics.setFullscreenMode(Gdx.graphics.getDisplayMode());
 			else if (Gdx.input.isKeyJustPressed(Keys.ENTER)) Gdx.graphics.setWindowedMode(width, height);
 		
-		batch.setProjectionMatrix(cam.combined);
+		batch.setProjectionMatrix(cam.combined); 
 		shapeRender.setProjectionMatrix(cam.combined);
 	}
 		
 	String subtitle = "Basic";
 	
-		int currentScene = 1;
+	int currentScene = 1;
 		
 	public void switchScene() {
 		currentScene++;
 		switch (currentScene) {
-			case 1:	this.setScreen(new scene1(this)); subtitle = "Basic";
+			case 1:	this.setScreen(new Scene1(this)); subtitle = "Basic";
 				break;
-			default: this.setScreen(new scene1(this)); currentScene = 1; subtitle = "Basic";
+			default: this.setScreen(new Scene1(this)); currentScene = 1; subtitle = "Basic";
 				break;
 		}
 	}
