@@ -1,6 +1,6 @@
-package org.joltsphere.testing.mechanics;
+package org.joltsphere.mechanics;
 
-import org.joltsphere.testing.main.JoltSphereTesting;
+import org.joltsphere.main.JoltSphereMain;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
@@ -13,12 +13,13 @@ import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.physics.box2d.World;
+import com.badlogic.gdx.utils.Array;
 
-public class TestPlayer {
+public class ArenaPlayer {
 	
 	
-	public float ppm = JoltSphereTesting.ppm;
-	public float FPSdv = 1f / JoltSphereTesting.FPS;
+	public float ppm = JoltSphereMain.ppm;
+	public float FPSdv = 1f / JoltSphereMain.FPS;
 	
 	public Body body;
 	public Fixture fixture;
@@ -28,6 +29,8 @@ public class TestPlayer {
 	public World world;
 	public Vector2 locationIndicator;
 	public Vector2 startingLocation;
+	public Color color;
+	public Array<Vector2> trail;
 	
 	public FixtureDef fdefBall;
 	public FixtureDef fdefSmash;
@@ -49,6 +52,11 @@ public class TestPlayer {
 	public boolean isGrounded = false;
 	public boolean wasKnockedOut = false;
 	
+	public float smashRestitution = 0.4f;
+	public float smashDensity = 80f;
+	public float smashJumpRestitution = 0.6f;
+	public float smashJumpDensity = 1500f;
+	
 	public int jumpDelay = 5;
 	public float jumpTimer = jumpDelay;
 	
@@ -61,8 +69,8 @@ public class TestPlayer {
 	public float smashCooldownLength = 250;
 	public float smashCooldown = smashCooldownLength;
 
-	public float energyTimerSpeed = 0.1f;
-	public float energyTimer = 0;
+	public float energyTimerSpeed = 1/50f;
+	public float energyTimer = 1;
 	
 	public float smashJumpLength = 17; //length of jump
 	public float smashJumpPeriodLength = 40; //period to jump
@@ -73,11 +81,13 @@ public class TestPlayer {
 	private float indicatorSclLimit = 0.01f;
 	public float indicatorSize = 1f;
 	
-	public TestPlayer (int xpos, int ypos, World realWorld, int playah) {
+	public ArenaPlayer (int xpos, int ypos, World world, int player, Color color) {
 	
-		player = playah;
+		this.player = player;
 		
-		world = realWorld;
+		this.world = world;
+
+		this.color = color;
 		
 		circShape = new CircleShape();
 		circShape.setRadius(26 / 100f);
@@ -91,6 +101,8 @@ public class TestPlayer {
 		createFixtureDefs();
 		
 		createBall(xpos, ypos);
+		
+		trail = new Array<Vector2>();
 				
 	}
 	
@@ -98,34 +110,6 @@ public class TestPlayer {
 	public void update(int contact, float delta, int width, int height) {
 		dv = delta;
 		arenaSpace = 0.5f * height;
-		
-		/*	dv = delta;
-		arenaSpace = 0.5f * height; //DO NOT REMOVE THIS LINE AT ALL COSTS,
-		//I WAS TOO LAZY TO PLACE IT IN THE CONSTRUCTOR BECAUSE IT DOESNT HAVE A
-		// WIDTH AND HEIGHT VARIABLE, MIGHT DO IT LATER, LOL, ACTUALLY THE TIME IT TOOK 
-		// ME TO WRITE ALL OF THIS, I PROBBABLY COULD OF CHANGED THE CODE, YOLO!
-		
-		/* Basic Values if on the Ground 
-		checkIfGrounded(contact);
-		
-		/* Creates timer to jump while bouncing around 
-		updateJumpTimers(dv);
-			
-		/* Allows for smash jump after end of smash 
-		updateSmashJump(dv);
-		
-		/* Sequence to preform if no longer smashing 
-		if (!isSmashing) notCurrentlySmashing();
-		
-		// Updates Indicator
-		updateLocationIndicator(width, height);
-		
-		// Checks if Dead
-		checkIfDead(width, height);
-		
-		//lowers energy
-		if (!isSmashing && !isSmashJumping) weakenPlayer();
-		*/
 		
 		/* Basic Values if on the Ground */
 		checkIfGrounded(contact);
@@ -144,14 +128,19 @@ public class TestPlayer {
 		// Checks if Dead
 		checkIfDead(width, height);
 		
-		if (!isSmashing && !isSmashJumping) weakenPlayer();
+		updateEnergy();
 		
+		//updateTrail();
 	}
 
 	
-	public void shapeRender(ShapeRenderer sRender, Color skinColor) {
+	public void shapeRender(ShapeRenderer sRender) {
 		
-		sRender.setColor(skinColor);
+		sRender.setColor(color);
+		//for (int i = 1; i < trail.size; i++) {
+			//sRender.circle(trail.get(i).x * ppm, trail.get(i).y * ppm, 50);
+		//}
+		
 		/*if (shouldLocationIndicate) {
 			float r = (indicatorSize / 2) *(1/indicatorSclLimit);
 			sRender.rect(locationIndicator.x - r, locationIndicator.y - r, r*2, r*2);
@@ -169,7 +158,7 @@ public class TestPlayer {
 			}
 		
 		
-		sRender.setColor(skinColor);
+		sRender.setColor(color);
 		if (isSmashing) 
 			sRender.circle(body.getPosition().x * ppm, body.getPosition().y * ppm, 15 * (ppm / 100f));
 		else if (isSmashJumping) 
@@ -188,6 +177,12 @@ public class TestPlayer {
 		
 	}
 	
+	@SuppressWarnings("unused")
+	private void updateTrail() {
+		trail.add(new Vector2(body.getPosition()));
+		if (trail.size >= 300) trail.removeIndex(0);
+	}
+	
 	private void checkIfGrounded(int contact) {
 		if (contact > 0) {//if on ground
 			hasDoubled = false; //reset double jump
@@ -196,6 +191,10 @@ public class TestPlayer {
 			isGrounded = true;
 		} 
 		else isGrounded = false;
+	}
+	
+	public Vector2 getPosition() {
+		return new Vector2(body.getPosition().x * ppm, body.getPosition().y * ppm);
 	}
 	
 	public void moveLeft () {
@@ -308,6 +307,20 @@ public class TestPlayer {
 		}
 		else isSmashing = false;
 	}
+	public void smashContactConfirmed() { //called when you land a hit
+		body.destroyFixture(fixture);
+		fdefSmash.restitution = 1f/energyTimer * smashRestitution;
+		// by end, of cycle, restitution will be 100x greater when set to 1f/energyTimer   
+		fixture = body.createFixture(fdefSmash);
+		fixture.setUserData("p" + player);
+		//System.out.println("Smash Confirmed " + fdefSmash.restitution);
+	}
+	public void smashNotContacting() {
+		body.destroyFixture(fixture);
+		fdefSmash.restitution = smashRestitution; 
+		fixture = body.createFixture(fdefSmash);
+		fixture.setUserData("p" + player);
+	}
 	public void notSmashing() { 
 		if (previousSmash) {
 			isSmashing = false; 
@@ -346,21 +359,27 @@ public class TestPlayer {
 	
 	public void resetEnergy() {
 		createFixtureDefs();
-		energyTimer = 0;
+		energyTimer = 1;
 	}
 	
 	public void otherPlayerKnockedOut() {
 		resetEnergy();
 	}
 	
-	void weakenPlayer() {
-		body.destroyFixture(fixture);
-		
+	void updateEnergy() {
+		/*body.destroyFixture(fixture);
 		if (fdefBall.density > 0.1f) fdefBall.density = 5 + energyTimer;
-		
 		fixture = body.createFixture(fdefBall);
 		fixture.setUserData("p" + player);
-		energyTimer -= energyTimerSpeed * dv;
+		*/
+		if (energyTimer > 5f/100f + energyTimerSpeed*dv) energyTimer -= energyTimerSpeed * dv;
+	}
+	
+	public void contactingOtherPlayer() {
+		if (isSmashing) smashContactConfirmed();
+	}
+	public void notContactingOtherPlayer() {
+		if (isSmashing) smashNotContacting();
 	}
 	
 	void updateLocationIndicator(int width, int height) {
@@ -475,14 +494,14 @@ public class TestPlayer {
 		fdefSmash = new FixtureDef();
 		fdefSmash.shape = createSmashShape(1/1.2f);
 		fdefSmash.friction = 0.2f;
-		fdefSmash.restitution = 0.4f;
-		fdefSmash.density = 80;//(80 / 0.01666666f) * FPSdv;        
+		fdefSmash.restitution = smashRestitution;
+		fdefSmash.density = smashDensity;//(80 / 0.01666666f) * FPSdv;        
 		
 		fdefSmashJump = new FixtureDef();
 		fdefSmashJump.shape = jumpShape;//createSmashShape(2f);
 		fdefSmashJump.friction = 0.5f;
-		fdefSmashJump.restitution = .6f;
-		fdefSmashJump.density = 1500;//(1500 / 0.01666666f) * FPSdv;
+		fdefSmashJump.restitution = smashJumpRestitution;
+		fdefSmashJump.density = smashJumpDensity;//(1500 / 0.01666666f) * FPSdv;
 		
 	}
 	

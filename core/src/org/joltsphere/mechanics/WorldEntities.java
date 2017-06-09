@@ -1,6 +1,6 @@
-package org.joltsphere.testing.mechanics;
+package org.joltsphere.mechanics;
 
-import org.joltsphere.testing.main.JoltSphereTesting;
+import org.joltsphere.main.JoltSphereMain;
 
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.BodyDef;
@@ -9,9 +9,9 @@ import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.World;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 
-public class TestEntities {
+public class WorldEntities {
 	
-	float ppm = JoltSphereTesting.ppm;
+	float ppm = JoltSphereMain.ppm;
 	
 	public World world;
 	
@@ -26,7 +26,7 @@ public class TestEntities {
 		 
 		ChainShape chain = new ChainShape();
 		Vector2[] v = new Vector2[12];
-		int x = JoltSphereTesting.WIDTH / 2;
+		int x = JoltSphereMain.WIDTH / 2;
 		
 		int xpnt1 = 800;
 		int xpnt2 = 760;

@@ -1,6 +1,6 @@
 package org.joltsphere.main.desktop;
 
-import org.joltsphere.testing.main.JoltSphereTesting;
+import org.joltsphere.main.JoltSphereMain;
 
 import com.badlogic.gdx.backends.lwjgl.LwjglApplication;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
@@ -11,13 +11,13 @@ public class TestingLauncher {
 		
 		LwjglApplicationConfiguration config = new LwjglApplicationConfiguration();
 	
-		config.width = JoltSphereTesting.WIDTH;
-		config.height = JoltSphereTesting.HEIGHT;
+		config.width = JoltSphereMain.WIDTH;
+		config.height = JoltSphereMain.HEIGHT;
 		
-		config.foregroundFPS = JoltSphereTesting.FPS;
+		config.foregroundFPS = JoltSphereMain.FPS;
 		config.backgroundFPS = 60;
 		
-		new LwjglApplication(new JoltSphereTesting(), config);
+		new LwjglApplication(new JoltSphereMain(), config);
 	
 	}
 	
