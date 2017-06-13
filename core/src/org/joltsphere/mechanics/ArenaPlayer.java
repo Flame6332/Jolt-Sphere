@@ -304,7 +304,12 @@ public class ArenaPlayer {
 	
 	
 	public boolean isAttacking() {
+		if (isSmashing || isMagnifying || isSmashJumping) {
+			return true;
+		} else return false;
+	}
 	private void updateAttackCooldown(float dt) {
+		if (!isAttacking()) {
 			if (attackCooldown > attackCooldownLength) canAttack = true;
 			else attackCooldown += 60 * dt;
 		}
