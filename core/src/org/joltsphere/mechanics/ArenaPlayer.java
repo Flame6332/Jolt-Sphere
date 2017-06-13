@@ -19,7 +19,7 @@ public class ArenaPlayer {
 	
 	
 	public float ppm = JoltSphereMain.ppm;
-	public float FPSdv = 1f / JoltSphereMain.FPS;
+	public float FPSdt = 1f / JoltSphereMain.FPS;
 	
 	public Body body;
 	public Fixture fixture;
@@ -31,6 +31,7 @@ public class ArenaPlayer {
 	public Vector2 startingLocation;
 	public Color color;
 	public Array<Vector2> trail;
+	public Array<Vector2> paint;
 	
 	public FixtureDef fdefBall;
 	public FixtureDef fdefSmash;
@@ -38,24 +39,36 @@ public class ArenaPlayer {
 	
 	public int knockouts = 0;
 	public int player;
-	private float dv;
+	private float dt;
 	
 	public boolean isSmashing = false;
 	public boolean isSmashJumping = false;
+	public boolean isMagnifying = false;
+	
 	public boolean hasDoubled = true;
 	public boolean canJump = false;
 	public boolean canHold = false;
-	public boolean canSmash = false;
+	public boolean canAttack = false;
 	public boolean canSmashJump = false;
-	public boolean previousSmash = false;
+	public boolean hadPreviouslySmashedLastFrame = false;
 	public boolean shouldLocationIndicate = false;
 	public boolean isGrounded = false;
 	public boolean wasKnockedOut = false;
 	
-	public float smashRestitution = 0.4f;
+	public float smashRestitution = 0; // restitution of smash object
 	public float smashDensity = 80f;
 	public float smashJumpRestitution = 0.6f;
 	public float smashJumpDensity = 1500f;
+	
+	public float energyTimerSpeed = 1/50f;
+	public float energyTimer = 1;
+	public float minimumEnergy = 0.05f;
+	
+	public boolean wasHitBySmash = false;
+	public float currentRecievingSmashRestitution = 0; // restitution whenever player hit with a smash
+	public float recievingSmashRestitution = 0.4f;
+	public float beforeContactRestitution = 0;
+	public float maximumContactRestitution = 1 / minimumEnergy * recievingSmashRestitution;
 	
 	public int jumpDelay = 5;
 	public float jumpTimer = jumpDelay;
@@ -66,12 +79,9 @@ public class ArenaPlayer {
 	public float smashLength = 60;
 	public float smashTimer = smashLength;
 	
-	public float smashCooldownLength = 250;
-	public float smashCooldown = smashCooldownLength;
+	public float attackCooldownLength = 250;
+	public float attackCooldown = 0;
 
-	public float energyTimerSpeed = 1/50f;
-	public float energyTimer = 1;
-	
 	public float smashJumpLength = 17; //length of jump
 	public float smashJumpPeriodLength = 40; //period to jump
 	public float smashJumpPeriod = smashJumpPeriodLength;
@@ -103,25 +113,26 @@ public class ArenaPlayer {
 		createBall(xpos, ypos);
 		
 		trail = new Array<Vector2>();
+		paint = new Array<Vector2>();
 				
 	}
 	
 	
-	public void update(int contact, float delta, int width, int height) {
-		dv = delta;
+	public void update(int contact, float deltaTime, int width, int height) {
+		dt = deltaTime;
 		arenaSpace = 0.5f * height;
 		
 		/* Basic Values if on the Ground */
 		checkIfGrounded(contact);
 		
 		/* Creates timer to jump while bouncing around */
-		updateJumpTimers(dv);
+		updateJumpTimers(dt);
 			
 		/* Allows for smash jump after end of smash */
-		updateSmashJump(dv);
+		updateSmashJump(dt);
 		
 		/* Sequence to preform if no longer smashing */
-		if (!isSmashing) notCurrentlySmashing();
+		updateAttackCooldown(dt);
 		
 		// Updates Indicator
 		updateLocationIndicator(width, height);
@@ -130,7 +141,7 @@ public class ArenaPlayer {
 		
 		updateEnergy();
 		
-		//updateTrail();
+		//updatePaint();
 	}
 
 	
@@ -152,9 +163,9 @@ public class ArenaPlayer {
 				sRender.circle(body.getPosition().x * ppm, body.getPosition().y * ppm, (circShape.getRadius()*100 + 1) * (ppm / 100f));
 			
 			if (shouldLocationIndicate) {
-				float r = (indicatorSize / 2) *(1/indicatorSclLimit);
+				//float r = (indicatorSize / 2) *(1/indicatorSclLimit);
 				//sRender.rect(locationIndicator.x - r, locationIndicator.y - r, r*2, r*2);
-				sRender.circle(locationIndicator.x, locationIndicator.y, r);
+				//sRender.circle(locationIndicator.x, locationIndicator.y, r);
 			}
 		
 		
@@ -166,6 +177,7 @@ public class ArenaPlayer {
 		else 
 			sRender.circle(body.getPosition().x * ppm, body.getPosition().y * ppm, circShape.getRadius()*100 * (ppm / 100f));
 		
+		sRender.setColor(Color.WHITE);
 		if (shouldLocationIndicate) {
 			float area = (float) (Math.pow(		(indicatorSize / 2) *(1/indicatorSclLimit)		, 2) * Math.PI);
 			float r = (float) (Math.pow((		// sqrt( pi*r^2 * 1/scl  ) 
@@ -177,10 +189,10 @@ public class ArenaPlayer {
 		
 	}
 	
-	@SuppressWarnings("unused")
-	private void updateTrail() {
-		trail.add(new Vector2(body.getPosition()));
-		if (trail.size >= 300) trail.removeIndex(0);
+	@SuppressWarnings("unused")  
+	private void updatePaint() {
+		paint.add(new Vector2(body.getPosition()));
+		if (paint.size >= 300) paint.removeIndex(0);
 	}
 	
 	private void checkIfGrounded(int contact) {
@@ -197,29 +209,29 @@ public class ArenaPlayer {
 		return new Vector2(body.getPosition().x * ppm, body.getPosition().y * ppm);
 	}
 	
-	public void moveLeft () {
-		moveHorizontal(-1);
+	public void moveLeft (float percent) {
+		moveHorizontal(-1, percent);
 	}
-	public void moveRight () {
-		moveHorizontal(1);
+	public void moveRight (float percent) {
+		moveHorizontal(1, percent);
 	} 
 	
-	private void moveHorizontal (int dir) {	
-		if (isSmashing) {
-			if (canJump) {
-				body.applyForceToCenter(500000 * dir * dv, 0, true);
-				body.applyAngularImpulse(-500f * dir * dv, true);
-			} else {
-				body.applyForceToCenter(60000 * dir * dv, 0, true);
-				body.applyForceToCenter(-500f * dir * dv, 0, true);
+	private void moveHorizontal (int dir, float percent) {	
+		if (isSmashing) { // smashing
+			if (canJump) { 
+				body.applyForceToCenter(50000 * dir * dt, 0, true);
+				body.applyAngularImpulse(-100f * dir * dt, true);
+			} else { // air smashing
+				body.applyForceToCenter(60000 * dir * dt, 0, true);
+				body.applyAngularImpulse(-100f * dir * dt, true);
 			}
 		}
-		else {
+		else { // not smashing
 			if (isGrounded) {
-				body.applyAngularImpulse(-12f * dir * dv, true);
-				body.applyForceToCenter((fdefBall.density / 5f) * 1200 * dir * dv, 0, true);
+				body.applyAngularImpulse(-12f * dir * dt, true);
+				body.applyForceToCenter((fdefBall.density / 5f) * 1200 * dir * dt, 0, true);
 			} else {
-				body.applyForceToCenter((fdefBall.density / 5f) * 900 * dir * dv, 0, true);
+				body.applyForceToCenter((fdefBall.density / 5f) * 900 * dir * dt, 0, true);
 			}
 		}	
 	}
@@ -231,117 +243,123 @@ public class ArenaPlayer {
 			if (canSmashJump) smashJump();
 			else { 
 				body.setLinearVelocity(body.getLinearVelocity().x * 0.3f, body.getLinearVelocity().y * 0.3f);
-				body.applyForceToCenter(0, (fdefBall.density / 5f) * 280, true);
-				//body.applyForceToCenter(0, 500, true);
+				body.applyForceToCenter(0, 280f, true);
 				jumpHoldTimer = jumpHoldPhase;
 			}
 		}
 		else if (!hasDoubled) {
 			body.setAngularVelocity(0);
 			body.setLinearVelocity(0, 0);
-			body.applyForceToCenter(0, (fdefBall.density / 5f) * 310, true);
+			body.applyForceToCenter(0, 310f, true);
 			hasDoubled = true;
 		}
 	}
 	public void jumpHold () {
 		if (!hasDoubled && canHold && !isSmashing) {
-			body.applyForceToCenter(0, (fdefBall.density / 5f) * 900 * dv, true);
+			body.applyForceToCenter(0, (fdefBall.density / 5f) * 900 * dt, true);
 		}
 	}
 	
-	private void updateJumpTimers(float dv) {
+	private void updateJumpTimers(float dt) {
 		if (jumpTimer > 0) {
 			canJump = true;
-			jumpTimer -= 60 * dv; 
+			jumpTimer -= 60 * dt; 
 		}
 		else canJump = false;
 			//similar, except timer for held jumps
 			if (jumpHoldTimer > 0) {
 				canHold = true;
-				jumpHoldTimer -= 60 * dv;
+				jumpHoldTimer -= 60 * dt;
 			} 
 			else canHold = false;
 	}
 	
 	private void smashJump() {
+		hasDoubled = true; // so you cant double jump during smash jummp
 		isSmashJumping = true;
 		
 		body.destroyFixture(fixture);
 		fixture = body.createFixture(fdefSmashJump);
 		fixture.setUserData("p" + player);
+		fixture.setRestitution(fixture.getRestitution() + (currentRecievingSmashRestitution / maximumContactRestitution));
 		
 		smashJumpPeriod = smashJumpLength;
-		body.setAngularVelocity(body.getAngularVelocity() * 0.3f);
-		body.setLinearVelocity(body.getLinearVelocity().x * 0.3f, body.getLinearVelocity().y * 0.1f);
+		body.setAngularVelocity(body.getAngularVelocity() * 0.3f); // rotational speed decreased 30%
+		body.setLinearVelocity(body.getLinearVelocity().x * 0.3f, body.getLinearVelocity().y * 0.1f); // velocities decreased 30% and 10%
 		body.applyForceToCenter(0, 2000000, true);
 	}
-	private void updateSmashJump(float dv) {
-		if (smashJumpPeriod > 0) {
+	private void updateSmashJump(float dt) {
+		if (smashJumpPeriod > 0) { // if you can still smash jump
 			canSmashJump = true;
-			smashJumpPeriod -= 60 * dv;
+			smashJumpPeriod -= 60 * dt;
 		}
-		else if (canSmashJump){
-			smashCooldown=0;
+		else if (canSmashJump){ // if youre out of time but the variable still there
+			attackCooldown = 0;
 			canSmashJump = false;
 			isSmashJumping = false;
 			body.setLinearVelocity(body.getLinearVelocity().x * 0.5f, body.getLinearVelocity().y * 0.05f); //not absolute stop
+			smashEnded(); // called in smash jump because it technically a smash by shape
 		}
 	}
 	
+	
+	public boolean isAttacking() {
+	private void updateAttackCooldown(float dt) {
+			if (attackCooldown > attackCooldownLength) canAttack = true;
+			else attackCooldown += 60 * dt;
+		}
+	}
 	
 	public void smash() {
-		if (canSmash) {
-			if (smashTimer == smashLength) {
-				body.destroyFixture(fixture);
-				fixture = body.createFixture(fdefSmash);
-				fixture.setUserData("p" + player);
-			}
-			if (!isGrounded) body.applyForceToCenter(0, -30000 * dv, true);
-			isSmashing = true;
-			if (canJump) canSmashJump = true;
-			previousSmash = true;
-			smashTimer-=60*dv;
-			if (smashTimer < 0) canSmash = false;
-				smashCooldown = 0; //resetting cooldown timer
-				
+		if (canAttack) {
+			if (smashTimer == smashLength) smashBegin(); // timer has not been changed yet, so begin smash
+			if (!isGrounded) body.applyForceToCenter(0, -30000 *dt, true);
+			if (canJump) body.applyForceToCenter(0, -30000 *dt, true);
+			isSmashing = true;   
+			hadPreviouslySmashedLastFrame = true;
+			smashTimer-=60*dt;
+			if (smashTimer < 0) smashEnded();
 		}
-		else isSmashing = false;
 	}
-	public void smashContactConfirmed() { //called when you land a hit
-		body.destroyFixture(fixture);
-		fdefSmash.restitution = 1f/energyTimer * smashRestitution;
-		// by end, of cycle, restitution will be 100x greater when set to 1f/energyTimer   
-		fixture = body.createFixture(fdefSmash);
-		fixture.setUserData("p" + player);
-		//System.out.println("Smash Confirmed " + fdefSmash.restitution);
+	public void notSmashing() { // called in keyboard controls when finger released
+		if (hadPreviouslySmashedLastFrame) { // called if you smashed last frame
+			smashJumpPeriod = smashJumpPeriodLength; // gives you a smash jump period since you released before smash end
+			hadPreviouslySmashedLastFrame = false; // updates this boolean
+			if (canJump) canSmashJump = true; // allows you to smash jump during smash
+			smashEnded(); // ends smash
+		}
 	}
-	public void smashNotContacting() {
+	private void smashBegin() {
 		body.destroyFixture(fixture);
-		fdefSmash.restitution = smashRestitution; 
 		fixture = body.createFixture(fdefSmash);
 		fixture.setUserData("p" + player);
 	}
-	public void notSmashing() { 
-		if (previousSmash) {
-			isSmashing = false; 
-			smashJumpPeriod = smashJumpPeriodLength;
-			previousSmash = false;
-		}
-		else isSmashing = false;  
+	private void smashEnded() {
+		isSmashing = false;
+		smashTimer = smashLength;
+		canAttack = false;
+		attackCooldown = 0;
+		body.destroyFixture(fixture);
+		fixture = body.createFixture(fdefBall);
+		fixture.setUserData("p" + player);
+		beforeContactRestitution = fixture.getRestitution();
 	}
-	private void notCurrentlySmashing() {
-		if (smashCooldown == 0) {
-			smashTimer = smashLength;
-			canSmash = false;
-			smashCooldown = 1;
-			body.destroyFixture(fixture);
-			fixture = body.createFixture(fdefBall);
-			fixture.setUserData("p" + player);
+	
+	public void hitBySmash() { //called when get smashed
+		wasHitBySmash = true;
+		fixture.setRestitution(currentRecievingSmashRestitution);
+	}
+	public void notHitBySmash() { // called whenever there isnt any contact with player in the update cycle
+		if (wasHitBySmash) {
+			wasHitBySmash = false;
+			fixture.setRestitution(beforeContactRestitution);
+			float scale = 100f / maximumContactRestitution * currentRecievingSmashRestitution;
+			body.applyForceToCenter(body.getLinearVelocity().x * scale, body.getLinearVelocity().y * scale, true);
 		}
-		else {
-			if (smashCooldown > smashCooldownLength) canSmash = true;
-			else smashCooldown += 60 * dv;
-		}
+	}
+	
+	public void magnify() {
+	
 	}
 	
 	
@@ -367,19 +385,16 @@ public class ArenaPlayer {
 	}
 	
 	void updateEnergy() {
-		/*body.destroyFixture(fixture);
-		if (fdefBall.density > 0.1f) fdefBall.density = 5 + energyTimer;
-		fixture = body.createFixture(fdefBall);
-		fixture.setUserData("p" + player);
-		*/
-		if (energyTimer > 5f/100f + energyTimerSpeed*dv) energyTimer -= energyTimerSpeed * dv;
+		if (energyTimer > minimumEnergy + energyTimerSpeed*dt) // add energy timer speed for going below minimum 
+			energyTimer -= energyTimerSpeed * dt; // lower energy timer
+		currentRecievingSmashRestitution = 1f/energyTimer * recievingSmashRestitution; 
 	}
 	
-	public void contactingOtherPlayer() {
-		if (isSmashing) smashContactConfirmed();
+	public void contactingOtherPlayer(boolean isOtherPlayerSmashing) {
+		if (isOtherPlayerSmashing) hitBySmash();
 	}
-	public void notContactingOtherPlayer() {
-		if (isSmashing) smashNotContacting();
+	public void notContactingOtherPlayer(boolean isOtherPlayerSmashing) {
+		notHitBySmash();
 	}
 	
 	void updateLocationIndicator(int width, int height) {
@@ -449,7 +464,10 @@ public class ArenaPlayer {
 				if (y < hMid) tempY = 1 - ((-1*y) * shrnk); // below
 					else tempY = 1 - ((y - h) * shrnk); // above
 				
-				if (tempX < tempY) indicatorScl = tempX; else indicatorScl = tempY; 
+				if (tempX < tempY) indicatorScl = tempX; else indicatorScl = tempY;
+				/*if (y < hMid) indicatorScl = 1 - ((-1*y) * shrnk); // below
+				else indicatorScl = 1 - ((y - h) * shrnk); // above	*/
+				
 			}
 		
 		}
@@ -489,19 +507,19 @@ public class ArenaPlayer {
 		fdefBall.shape = circShape;
 		fdefBall.friction = 0.1f;
 		fdefBall.restitution = 0;
-		fdefBall.density = 5;//(5 / 0.01666666f) * FPSdv;        
+		fdefBall.density = 5;//(5 / 0.01666666f) * FPSdt;        
 		
 		fdefSmash = new FixtureDef();
 		fdefSmash.shape = createSmashShape(1/1.2f);
 		fdefSmash.friction = 0.2f;
 		fdefSmash.restitution = smashRestitution;
-		fdefSmash.density = smashDensity;//(80 / 0.01666666f) * FPSdv;        
+		fdefSmash.density = smashDensity;//(80 / 0.01666666f) * FPSdt;        
 		
 		fdefSmashJump = new FixtureDef();
 		fdefSmashJump.shape = jumpShape;//createSmashShape(2f);
 		fdefSmashJump.friction = 0.5f;
 		fdefSmashJump.restitution = smashJumpRestitution;
-		fdefSmashJump.density = smashJumpDensity;//(1500 / 0.01666666f) * FPSdv;
+		fdefSmashJump.density = smashJumpDensity;//(1500 / 0.01666666f) * FPSdt;
 		
 	}
 	
@@ -511,20 +529,20 @@ public class ArenaPlayer {
 		
 		Vector2[] v = new Vector2[8];
 		//bottom left
-		v[0] = new Vector2(-30 * scl / 100, -15 * scl / 100);
-		v[1] = new Vector2(-15 * scl / 100, -30 * scl / 100);
+		v[0] = new Vector2(-30 * scl / 100, -12.5f * scl / 100);
+		v[1] = new Vector2(-12.5f * scl / 100, -30 * scl / 100);
 		
 		//bottom right
-		v[2] = new Vector2(15 * scl / 100, -30 * scl / 100);
-		v[3] = new Vector2(30 * scl / 100, -15 * scl / 100);
+		v[2] = new Vector2(12.5f * scl / 100, -30 * scl / 100);
+		v[3] = new Vector2(30 * scl / 100, -12.5f * scl / 100);
 		
 		//top right
-		v[4] = new Vector2(30 * scl / 100, 15 * scl / 100);
-		v[5] = new Vector2(15 * scl / 100, 30 * scl / 100);
+		v[4] = new Vector2(30 * scl / 100, 12.5f * scl / 100);
+		v[5] = new Vector2(12.5f * scl / 100, 30 * scl / 100);
 		
 		//top left
-		v[6] = new Vector2(-15 * scl / 100, 30 * scl / 100);
-		v[7] = new Vector2(-30 * scl / 100, 15 * scl / 100);
+		v[6] = new Vector2(-12.5f * scl / 100, 30 * scl / 100);
+		v[7] = new Vector2(-30 * scl / 100, 12.5f * scl / 100);
 	
 		shape.set(v);
 		

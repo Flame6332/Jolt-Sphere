@@ -1,5 +1,7 @@
 package org.joltsphere.main;
 
+import java.awt.DisplayMode;
+
 import org.joltsphere.scenes.Scene1;
 
 import com.badlogic.gdx.Game;
@@ -64,6 +66,7 @@ public class JoltSphereMain extends Game {
 		this.setScreen(new Scene1(this));
 		
 		Gdx.graphics.setVSync(true);
+		Gdx.graphics.setFullscreenMode(Gdx.graphics.getDisplayMode());
 		
 		batch = new SpriteBatch();
 		shapeRender = new ShapeRenderer();
@@ -110,4 +113,11 @@ public class JoltSphereMain extends Game {
 	public void dispose () {
 		 
 	}
+	
+	public class input implements UniversalControllerInput {
+	
+		
+		
+	}
+	
 }

@@ -1,5 +1,6 @@
 package org.joltsphere.mechanics;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.utils.Array;
 
 public class ArenaSpace {
@@ -32,6 +33,21 @@ public class ArenaSpace {
 		}
 		
 	}
+	
+	public void input(int player, int up, int down, int left, int right, int modifier) {
+		if (Gdx.input.isKeyPressed(modifier)) {
+			if (Gdx.input.isKeyPressed(up)) players.get(player).magnify();
+		}
+		else {
+			if (Gdx.input.isKeyJustPressed(up)) players.get(player).jump();
+			else if (Gdx.input.isKeyPressed(down)) players.get(player).smash(); // added not smashing to notify when finger released
+				else players.get(player).notSmashing(); //place at top for smash density reset 
+			if (Gdx.input.isKeyPressed(left)) players.get(player).moveLeft(1);
+			if (Gdx.input.isKeyPressed(right)) players.get(player).moveRight(1);
+			if (Gdx.input.isKeyPressed(up)) players.get(player).jumpHold();
+		}
+	}
+	
 	
 	
 }
