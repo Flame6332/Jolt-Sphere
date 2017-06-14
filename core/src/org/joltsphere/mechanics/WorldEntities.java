@@ -62,6 +62,37 @@ public class WorldEntities {
 		
 	}
 
+	public void createFlatPlatform(World world) {
+		 
+		this.world = world;
+		
+		BodyDef bdef = new BodyDef();
+		bdef.type = BodyType.StaticBody;
+		bdef.position.x = 0;
+		bdef.position.y = 0;
+		 
+		int w = JoltSphereMain.WIDTH, h = JoltSphereMain.HEIGHT;
+		ChainShape chain = new ChainShape();
+		Vector2[] v = new Vector2[5];
+		
+		v[0] = new Vector2((0 +1) / ppm, (0 +1) / ppm);
+		v[1] = new Vector2((w -1) / ppm, (0 +1) / ppm);
+		v[2] = new Vector2((w -1) / ppm, (h -1) / ppm);
+		v[3] = new Vector2((0 +1) / ppm, (h -1) / ppm);
+		v[4] = new Vector2((0 +1) / ppm, (1 +1)/ ppm);
+			
+		chain.createChain(v);
+		FixtureDef fdef  = new FixtureDef();
+		fdef.shape = chain;
+		fdef.friction = 1;
+		fdef.restitution = 0;
+		
+		world.createBody(bdef).createFixture(fdef).setUserData("ground");
+		
+		chain.dispose();
+		
+	}
+	
 	public void createPlatform2(World world) {
 		 
 		this.world = world;

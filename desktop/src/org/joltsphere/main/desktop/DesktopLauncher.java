@@ -7,9 +7,10 @@ import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
 
 public class DesktopLauncher {
 	
+	static LwjglApplicationConfiguration config;
+	
 	public static void main (String[] arg) {
-		
-		LwjglApplicationConfiguration config = new LwjglApplicationConfiguration();
+		config = new LwjglApplicationConfiguration();
 		
 		config.x = 0;
 		config.y = 0;
@@ -17,7 +18,13 @@ public class DesktopLauncher {
 		config.width = JoltSphereMain.WIDTH;
 		config.height = JoltSphereMain.HEIGHT;
 
-		new LwjglApplication(new JoltSphereMain(), config);
+		new LwjglApplication(new JoltSphereMain() {
+			@Override
+            protected void setFPSLimit(int value) {
+                config.foregroundFPS = value;
+                config.backgroundFPS = value;
+            }
+		}, config);
 	
 	}
 	

@@ -1,6 +1,8 @@
 package org.joltsphere.mechanics;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+
 import com.badlogic.gdx.utils.Array;
 
 public class ArenaSpace {
@@ -18,10 +20,10 @@ public class ArenaSpace {
 		
 	}
 	 
-	public void update(float dv, Array<Integer> contacts) {
+	public void update(float dt, Array<Integer> contacts) {
 		
 		for (int i = 1; i <= players.size; i++) {
-			players.get(i - 1).update(contacts.get(i - 1), dv, width, height);
+			players.get(i - 1).update(contacts.get(i - 1), dt, width, height);
 		
 			if (players.get(i - 1).wasKnockedOut) {
 				players.get(i - 1).wasKnockedOut = false; // resets event
@@ -31,6 +33,22 @@ public class ArenaSpace {
 			}
 			
 		}
+		
+	}
+	
+	public void shapeRender(ShapeRenderer shapeRender) {
+		for (int i = 0; i < players.size; i++) {
+			players.get(i).shapeRender(shapeRender);
+		}
+		
+		for (int i = 1; i <= players.first().paint.size; i++) { // all paint trails the same
+			for (int j = 0; j < players.size; j++) {
+				players.get(j).renderPaint(shapeRender, i);
+			}		
+		}
+		
+		//shapeRender.rect(-10000 - width/2f, height * 1.5f, 20000, 200, Color.WHITE, Color.WHITE, Color.WHITE, Color.WHITE);
+		//shapeRender.rect(-10000 - width/2f, height * -0.5f - 200, 20000, 200, Color.WHITE, Color.WHITE, Color.WHITE, Color.WHITE);
 		
 	}
 	

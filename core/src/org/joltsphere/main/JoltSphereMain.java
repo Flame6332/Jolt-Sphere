@@ -1,8 +1,7 @@
 package org.joltsphere.main;
 
-import java.awt.DisplayMode;
-
 import org.joltsphere.scenes.Scene1;
+import org.joltsphere.scenes.Scene2;
 
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
@@ -28,7 +27,7 @@ public class JoltSphereMain extends Game {
 	public static int HEIGHT = 9 * displayScale;
 	public static final int FPS = 60;
 	
-	public static String title = "Jolt Sphere Testing";
+	public static String title = "Jolt Sphere";
 	
 	public BitmapFont font; //testing font
 	private Texture fontTex; //texture for font
@@ -66,6 +65,7 @@ public class JoltSphereMain extends Game {
 		this.setScreen(new Scene1(this));
 		
 		Gdx.graphics.setVSync(true);
+		setFPSLimit(60);
 		Gdx.graphics.setFullscreenMode(Gdx.graphics.getDisplayMode());
 		
 		batch = new SpriteBatch();
@@ -77,6 +77,8 @@ public class JoltSphereMain extends Game {
 	public void render () {
 		Gdx.gl.glClearColor(0, 0, 0, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+		
+		if (Gdx.input.isKeyJustPressed(Keys.TAB)) switchScene();
 		
 		super.render(); //renders in screens
 		
@@ -96,9 +98,11 @@ public class JoltSphereMain extends Game {
 	public void switchScene() {
 		currentScene++;
 		switch (currentScene) {
-			case 1:	this.setScreen(new Scene1(this)); subtitle = "Basic";
+			case 1:	this.setScreen(new Scene1(this)); subtitle = "Arena";
 				break;
-			default: this.setScreen(new Scene1(this)); currentScene = 1; subtitle = "Basic";
+			case 2: this.setScreen(new Scene2(this)); subtitle = "StreamBeam";
+				break;
+			default: this.setScreen(new Scene1(this)); currentScene = 1; subtitle = "Arena";
 				break;
 		}
 	}
@@ -119,5 +123,7 @@ public class JoltSphereMain extends Game {
 		
 		
 	}
+	
+	protected void setFPSLimit(int value) {} // overidden in desktop launcher
 	
 }

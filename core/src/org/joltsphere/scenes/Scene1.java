@@ -33,6 +33,12 @@ public class Scene1 implements Screen {
 	boolean isTimerEnabled = true;
 	float ppm = JoltSphereMain.ppm;
 	
+	/* TODO
+	 * - Move contact listener and world stuff into the arenaspace for easier world stuff
+	 * - Remove unused variables
+	 * - Change up player addition to accomodate for previous change 
+	 */
+	
 	public Scene1 (final JoltSphereMain gam) {
 		game = gam;
 		
@@ -58,8 +64,7 @@ public class Scene1 implements Screen {
 	} 
 	
 	void update(float dt) {
-		if (Gdx.input.isKeyJustPressed(Keys.TAB)) game.switchScene();
-		
+	
 		arena.input(0, Keys.UP, Keys.DOWN, Keys.LEFT, Keys.RIGHT, Keys.CONTROL_RIGHT);
 		arena.input(1, Keys.W, Keys.S, Keys.A, Keys.D, Keys.SHIFT_LEFT); 
 		arena.update(dt, contLis.playerContacts);
@@ -105,19 +110,7 @@ public class Scene1 implements Screen {
 	
 		game.shapeRender.begin(ShapeType.Filled);
 			
-			for (int i = 1; i < arena.players.get(0).paint.size; i++) {
-				game.shapeRender.setColor(arena.players.get(0).color);
-				game.shapeRender.circle(arena.players.get(0).paint.get(i).x * ppm, arena.players.get(0).paint.get(i).y * ppm, 50);
-	
-				game.shapeRender.setColor(arena.players.get(1).color);
-				game.shapeRender.circle(arena.players.get(1).paint.get(i).x * ppm, arena.players.get(1).paint.get(i).y * ppm, 50);
-			}
-		
-			arena.players.get(0).shapeRender(game.shapeRender);
-			arena.players.get(1).shapeRender(game.shapeRender);
-			
-			game.shapeRender.rect(-10000 - game.width/2f, game.height * 1.5f, 20000, 200, Color.WHITE, Color.WHITE, Color.WHITE, Color.WHITE);
-			game.shapeRender.rect(-10000 - game.width/2f, game.height * -0.5f - 200, 20000, 200, Color.WHITE, Color.WHITE, Color.WHITE, Color.WHITE);
+			arena.shapeRender(game.shapeRender);
 			
 		game.shapeRender.end();
 		
@@ -133,11 +126,10 @@ public class Scene1 implements Screen {
 		
 		if (isTimerEnabled) game.font.draw(game.batch, (int)(timer / 60) + " : " + Math.round(((timer / 60) - (int) (timer / 60)) *60), game.width * 0.46f, game.height * 0.92f);	
 		
-		//game.font.draw(game.batch, Math.round((arena.players.get(0).fdefBall.density / 5 * 100) * 10f)/10f + "%", game.width * 0.85f, game.height * 0.6f);
-		//game.font.draw(game.batch, Math.round((arena.players.get(0).energyTimer * 100) * 10f)/10f + "%", game.width * 0.85f, game.height * 0.6f);
+			//game.font.draw(game.batch, Math.round((arena.players.get(0).fdefBall.density / 5 * 100) * 10f)/10f + "%", game.width * 0.85f, game.height * 0.6f);
+			//game.font.draw(game.batch, Math.round((arena.players.get(0).energyTimer * 100) * 10f)/10f + "%", game.width * 0.85f, game.height * 0.6f);
+		
 		game.font.draw(game.batch, Math.round((arena.players.get(0).currentRecievingSmashRestitution) * 10f)/10f + "x", game.width * 0.85f, game.height * 0.6f);
-		//game.font.draw(game.batch, Math.round((arena.players.get(1).fdefBall.density / 5 * 100) * 10f)/10f + "%", game.width * 0.06f, game.height * 0.6f);
-		//game.font.draw(game.batch, Math.round((arena.players.get(1).currentSmashRestitution) * 10f)/10f + "%", game.width * 0.06f, game.height * 0.6f);
 		game.font.draw(game.batch, Math.round((arena.players.get(1).currentRecievingSmashRestitution) * 10f)/10f + "x", game.width * 0.06f, game.height * 0.6f);
 		
 		game.batch.end();
@@ -154,6 +146,7 @@ public class Scene1 implements Screen {
 		//game.phys2Dcam.position.set(pos.x/ppm, pos.y/ppm, 0);
 		//game.phys2Dcam.zoom = pos.z;
 		*/
+		
 		game.cam.update();
 		game.phys2Dcam.update();
 		

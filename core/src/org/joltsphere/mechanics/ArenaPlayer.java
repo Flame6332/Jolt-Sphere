@@ -57,7 +57,7 @@ public class ArenaPlayer {
 	
 	public float smashRestitution = 0; // restitution of smash object
 	public float smashDensity = 80f;
-	public float smashJumpRestitution = 0.6f;
+	public float smashJumpRestitution = 0.6f; 
 	public float smashJumpDensity = 1500f;
 	
 	public float energyTimerSpeed = 1/50f;
@@ -189,6 +189,11 @@ public class ArenaPlayer {
 		
 	}
 	
+	public void renderPaint(ShapeRenderer shapeRender, int i) {
+		shapeRender.setColor(color);
+		shapeRender.circle(paint.get(i).x * ppm, paint.get(i).y * ppm, 50);
+	}
+	
 	@SuppressWarnings("unused")  
 	private void updatePaint() {
 		paint.add(new Vector2(body.getPosition()));
@@ -216,22 +221,22 @@ public class ArenaPlayer {
 		moveHorizontal(1, percent);
 	} 
 	
-	private void moveHorizontal (int dir, float percent) {	
+	private void moveHorizontal (int dir, float percent) {
 		if (isSmashing) { // smashing
 			if (canJump) { 
-				body.applyForceToCenter(50000 * dir * dt, 0, true);
-				body.applyAngularImpulse(-100f * dir * dt, true);
+				body.applyForceToCenter(50000 * dir * 0.01666666f, 0, true);
+				body.applyTorque(-100f * dir, true);
 			} else { // air smashing
-				body.applyForceToCenter(60000 * dir * dt, 0, true);
-				body.applyAngularImpulse(-100f * dir * dt, true);
+				body.applyForceToCenter(60000 * dir * 0.01666666f, 0, true);
+				body.applyTorque(-100f * dir, true);
 			}
 		}
 		else { // not smashing
 			if (isGrounded) {
-				body.applyAngularImpulse(-12f * dir * dt, true);
-				body.applyForceToCenter((fdefBall.density / 5f) * 1200 * dir * dt, 0, true);
+				body.applyTorque(-12f * dir, true);
+				body.applyForceToCenter(1200 * dir * 0.01666666f, 0, true);
 			} else {
-				body.applyForceToCenter((fdefBall.density / 5f) * 900 * dir * dt, 0, true);
+				body.applyForceToCenter(900 * dir * 0.01666666f, 0, true);
 			}
 		}	
 	}
@@ -243,26 +248,28 @@ public class ArenaPlayer {
 			if (canSmashJump) smashJump();
 			else { 
 				body.setLinearVelocity(body.getLinearVelocity().x * 0.3f, body.getLinearVelocity().y * 0.3f);
-				body.applyForceToCenter(0, 280f, true);
+				body.applyLinearImpulse(0, 280f * 0.016666666f, 0, 0, true);
 				jumpHoldTimer = jumpHoldPhase;
 			}
 		}
 		else if (!hasDoubled) {
 			body.setAngularVelocity(0);
 			body.setLinearVelocity(0, 0);
-			body.applyForceToCenter(0, 310f, true);
+			body.applyLinearImpulse(0, 310f * 0.01666666f, 0, 0, true);
 			hasDoubled = true;
 		}
 	}
 	public void jumpHold () {
 		if (!hasDoubled && canHold && !isSmashing) {
-			body.applyForceToCenter(0, (fdefBall.density / 5f) * 900 * dt, true);
+			body.applyForceToCenter(0, 900 * 0.01666666f, true);
 		}
 	}
 	
 	private void updateJumpTimers(float dt) {
 		if (jumpTimer > 0) {
 			canJump = true;
+			
+			
 			jumpTimer -= 60 * dt; 
 		}
 		else canJump = false;
@@ -286,7 +293,7 @@ public class ArenaPlayer {
 		smashJumpPeriod = smashJumpLength;
 		body.setAngularVelocity(body.getAngularVelocity() * 0.3f); // rotational speed decreased 30%
 		body.setLinearVelocity(body.getLinearVelocity().x * 0.3f, body.getLinearVelocity().y * 0.1f); // velocities decreased 30% and 10%
-		body.applyForceToCenter(0, 2000000, true);
+		body.applyLinearImpulse(0, 2000000f * 0.0166666f, 0, 0, true);
 	}
 	private void updateSmashJump(float dt) {
 		if (smashJumpPeriod > 0) { // if you can still smash jump
@@ -318,8 +325,8 @@ public class ArenaPlayer {
 	public void smash() {
 		if (canAttack) {
 			if (smashTimer == smashLength) smashBegin(); // timer has not been changed yet, so begin smash
-			if (!isGrounded) body.applyForceToCenter(0, -30000 *dt, true);
-			if (canJump) body.applyForceToCenter(0, -30000 *dt, true);
+			if (!isGrounded) body.applyForceToCenter(0, -30000 * 0.01666666f, true);
+			if (canJump) body.applyForceToCenter(0, -30000 * 0.0166666f, true);
 			isSmashing = true;   
 			hadPreviouslySmashedLastFrame = true;
 			smashTimer-=60*dt;
@@ -359,7 +366,7 @@ public class ArenaPlayer {
 			wasHitBySmash = false;
 			fixture.setRestitution(beforeContactRestitution);
 			float scale = 100f / maximumContactRestitution * currentRecievingSmashRestitution;
-			body.applyForceToCenter(body.getLinearVelocity().x * scale, body.getLinearVelocity().y * scale, true);
+			body.applyLinearImpulse(body.getLinearVelocity().x * scale * 0.01666666f, body.getLinearVelocity().y * scale * 0.01666666f, 0, 0, true);
 		}
 	}
 	
