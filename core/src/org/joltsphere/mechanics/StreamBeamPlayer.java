@@ -39,7 +39,7 @@ public class StreamBeamPlayer {
 	
 	private boolean isGrounded = false;
 	
-	private float firingRate = 0.016666f; // the smaller the faster
+	private float firingRate = 0.016667f; // the smaller the faster
 	private float ballsTryingToBeFired = 0;
 	
 	private float sightRotationAmount = 0;
