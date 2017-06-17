@@ -2,6 +2,9 @@ package org.joltsphere.main;
 
 import org.joltsphere.scenes.Scene1;
 import org.joltsphere.scenes.Scene2;
+import org.joltsphere.scenes.Scene3;
+import org.joltsphere.scenes.Scene4;
+import org.joltsphere.scenes.Scene5;
 
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
@@ -65,7 +68,7 @@ public class JoltSphereMain extends Game {
 		this.setScreen(new Scene1(this));
 		
 		Gdx.graphics.setVSync(true);
-		setFPSLimit(60);
+		setFPSLimit(60); 
 		Gdx.graphics.setFullscreenMode(Gdx.graphics.getDisplayMode());
 		
 		batch = new SpriteBatch();
@@ -101,6 +104,12 @@ public class JoltSphereMain extends Game {
 			case 1:	this.setScreen(new Scene1(this)); subtitle = "Arena";
 				break;
 			case 2: this.setScreen(new Scene2(this)); subtitle = "StreamBeam";
+				break;
+			case 3: this.setScreen(new Scene3(this)); subtitle = "Mountain Climber";
+				break;
+			case 4: this.setScreen(new Scene4(this)); subtitle = "Tower Defense";
+				break;
+			case 5: this.setScreen(new Scene5(this)); subtitle = "Ninja Chase";
 				break;
 			default: this.setScreen(new Scene1(this)); currentScene = 1; subtitle = "Arena";
 				break;

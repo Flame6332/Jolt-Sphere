@@ -2,6 +2,9 @@ package org.joltsphere.mechanics;
 
 import org.joltsphere.main.JoltSphereMain;
 
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
@@ -17,7 +20,7 @@ import com.badlogic.gdx.physics.box2d.World;
 public class StreamBeamPlayer {
 	
 	private World world;
-	private Body body;
+	public Body body;
 	private Body sightBody;
 	private Body rotatingBody;
 	private Array<FiredBall> firedBalls;
@@ -32,34 +35,44 @@ public class StreamBeamPlayer {
 	private CircleShape circle;
 	private CircleShape sightCircle;
 	
-	private float sightRotationAmount = 0;
+	private Color color;
 	
-	private float firingRate = 0.01f; // the smaller the faster
-	private float timeLeftUntilNextShot = firingRate;
+	private boolean isGrounded = false;
+	
+	private float firingRate = 0.016666f; // the smaller the faster
+	private float ballsTryingToBeFired = 0;
+	
+	private float sightRotationAmount = 0;
+	private boolean didRotateLastFrame = false;
+	private float rotationSpeed = 0.005f; // beginning rotation speed
+	private float currentRotationSpeed = rotationSpeed;
 	
 	private float ppm = JoltSphereMain.ppm;
 	private float dt = 0.01666f;
 	
-	public StreamBeamPlayer(World world, int x, int y) {
+	public StreamBeamPlayer(World world, int x, int y, Color color) {
 		this.world = world;
+		this.color = color;
 		
 		bdef = new BodyDef();
 		bdef.type = BodyType.DynamicBody;
 		bdef.position.set(x / ppm, y / ppm);
 		bdef.fixedRotation = false;
 		bdef.bullet = true;
+		bdef.linearDamping = 0.2f;
+		bdef.angularDamping = 0.5f;
 		body = world.createBody(bdef);
 		fdef = new FixtureDef();
 		circle = new CircleShape();
 		circle.setRadius(50 / ppm);
 		fdef.shape = circle;
-		fdef.friction = 0.4f;
+		fdef.friction = 0.1f;
 		fdef.density = 10;
-		fdef.restitution = 0.2f;
+		fdef.restitution = 0;
 		fdef.filter.categoryBits = 1;
 		fdef.filter.maskBits = 1;
 		fixture = body.createFixture(fdef);
-		fixture.setUserData("p1");
+		fixture.setUserData("streamBeam");
 		
 		bdef = new BodyDef();
 		bdef.type = BodyType.DynamicBody;
@@ -102,7 +115,7 @@ public class StreamBeamPlayer {
 		bdefFire = new BodyDef();
 		bdefFire.type = BodyType.DynamicBody;
 		bdefFire.fixedRotation = false;
-		bdefFire.bullet = false;
+		bdefFire.bullet = false	;
 		fdefFire = new FixtureDef();
 		CircleShape fireCircle = new CircleShape();
 		fireCircle.setRadius(16 / ppm);
@@ -115,9 +128,24 @@ public class StreamBeamPlayer {
 			
 	}
 	
-	public void update(float dt) {
+	public void shapeRender(ShapeRenderer shapeRender) {
+		shapeRender.setColor(color);
+		shapeRender.circle(body.getPosition().x*ppm,body.getPosition().y*ppm, 50);
+		shapeRender.setColor(Color.GOLD);
+		for (int i = 0; i < firedBalls.size; i++) {
+			shapeRender.circle(firedBalls.get(i).fireBody.getPosition().x*ppm, firedBalls.get(i).fireBody.getPosition().y*ppm, 16);
+		}
+		shapeRender.setColor(Color.WHITE);
+		shapeRender.circle(sightBody.getPosition().x * ppm, sightBody.getPosition().y * ppm, 20);
+	}
+	
+	public void update(float dt, int groundContacts) {
 		this.dt = dt;
 		updateFiredBalls();
+		
+		if (groundContacts > 0) isGrounded = true;
+		else isGrounded = false;
+		
 	}
 
 	public void moveLeft() {
@@ -127,7 +155,15 @@ public class StreamBeamPlayer {
 		moveHorizontal(1);
 	}
 	private void moveHorizontal(int dir) {
-		
+		body.applyForceToCenter(30*dir, 0, true);
+		body.applyTorque(-5 * dir, true);
+	}
+	public void jump() {
+		if (isGrounded) {
+			body.setLinearVelocity(body.getLinearVelocity().x * 0.3f, body.getLinearVelocity().y * 0.3f);
+			body.applyLinearImpulse(0, 16, 0, 0, true);
+		}
+		//body.applyForceToCenter(0, 40, true);
 	}
 	
 	public void rotateAimLeft() {
@@ -137,17 +173,27 @@ public class StreamBeamPlayer {
 		rotateAim(1);
 	}
 	private void rotateAim(int dir) {
-		sightRotationAmount -= 0.04f * dir * dt / 0.016666f;
+		didRotateLastFrame = true;
+		sightRotationAmount -= currentRotationSpeed * dir * dt / 0.016666f;
 		rotatingBody.setTransform(rotatingBody.getPosition(), sightRotationAmount);
+		if (currentRotationSpeed < 0.15f)
+			currentRotationSpeed += 0.011 * dt / 0.0166666f;
+	}
+	public void notRotating() {
+		if (didRotateLastFrame) {
+			didRotateLastFrame = false;
+			currentRotationSpeed = rotationSpeed;
+		}
 	}
 	
 	public void fire() {
-		if (timeLeftUntilNextShot < 0) {
+		ballsTryingToBeFired += (dt / firingRate);
+		int ballsToFireThisFrame = (int) (ballsTryingToBeFired) ;
+		for (int i = 1; i <= ballsToFireThisFrame; i++) {
 			bdefFire.position.set(sightBody.getPosition());
-			timeLeftUntilNextShot = firingRate;
 			firedBalls.add(new FiredBall());
-		}
-		else timeLeftUntilNextShot -= dt;
+			ballsTryingToBeFired--; // shot a ball
+		}		
 	}
 	private void updateFiredBalls() {
 		for (int i = 0; i < firedBalls.size; i++) {
@@ -158,7 +204,7 @@ public class StreamBeamPlayer {
 	
 	private class FiredBall {
 		private Body fireBody;
-		private float deathCountdown = 1.0f;
+		private float deathCountdown = 1.0f; // how long they last in seconds
 		public boolean isDead = false;
 		public FiredBall() {
 			fireBody = world.createBody(bdefFire);
@@ -166,7 +212,7 @@ public class StreamBeamPlayer {
 			fireBody.applyLinearImpulse(vectorComponent(
 					body.getPosition().x, body.getPosition().y,
 					sightBody.getPosition().x, sightBody.getPosition().y, 
-					10f), new Vector2(0,0), true);
+					8f), new Vector2(0,0), true);
 		}
 		public void update() {
 			if (deathCountdown < 0) {
@@ -193,6 +239,29 @@ public class StreamBeamPlayer {
 		float yIterationSpeed = percentOfLine * yRelativeToFirst;
 		
 		return new Vector2(xIterationSpeed, yIterationSpeed);
+	}
+	
+
+	public void input(int up, int down, int left, int right, int rotateLeft, int rotateRight, int fire) {
+	//public void input(int up, int down, int left, int right, int modifier) {
+		/*if (Gdx.input.isKeyPressed(modifier)) {
+			if (Gdx.input.isKeyPressed(left)) rotateAimLeft();
+			else if (Gdx.input.isKeyPressed(right)) rotateAimRight();
+			else notRotating();
+			if (Gdx.input.isKeyPressed(up)) fire();
+		}
+		else {
+			if (Gdx.input.isKeyPressed(left)) moveLeft();
+			if (Gdx.input.isKeyPressed(right)) moveRight();
+			if (Gdx.input.isKeyJustPressed(up)) jump();
+		}/**/
+		if (Gdx.input.isKeyPressed(left)) moveLeft();
+		if (Gdx.input.isKeyPressed(right)) moveRight();
+		if (Gdx.input.isKeyJustPressed(up)) jump();
+		if (Gdx.input.isKeyPressed(rotateLeft)) rotateAimLeft();
+		else if (Gdx.input.isKeyPressed(rotateRight)) rotateAimRight();
+		else notRotating();
+		if (Gdx.input.isKeyPressed(fire)) fire();/**/
 	}
 	
 }

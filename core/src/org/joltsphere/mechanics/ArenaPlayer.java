@@ -51,6 +51,7 @@ public class ArenaPlayer {
 	public boolean canAttack = false;
 	public boolean canSmashJump = false;
 	public boolean hadPreviouslySmashedLastFrame = false;
+	private boolean hadPreviouslyMagnifiedLastFrame = false;
 	public boolean shouldLocationIndicate = false;
 	public boolean isGrounded = false;
 	public boolean wasKnockedOut = false;
@@ -78,6 +79,9 @@ public class ArenaPlayer {
 	
 	public float smashLength = 60;
 	public float smashTimer = smashLength;
+	
+	private float magnifyLength = 60;
+	private float magnifyTimer = magnifyLength;
 	
 	public float attackCooldownLength = 250;
 	public float attackCooldown = 0;
@@ -370,10 +374,38 @@ public class ArenaPlayer {
 		}
 	}
 	
-	public void magnify() {
-	
+	public void magnify(Vector2 otherPlayer) {
+		if (canAttack) {
+			body.applyForce(vectorComponent(
+					body.getPosition().x, body.getPosition().y, 
+					otherPlayer.x, otherPlayer.y, 
+					0), new Vector2(0,0), true);
+			isMagnifying = true;
+			attackCooldown = 0;
+			magnifyTimer -= 60*dt;
+			if (magnifyTimer < 0) magnifyEnded();
+			hadPreviouslyMagnifiedLastFrame = true;
+		}
 	}
-	
+	public void notMagnifying() {
+		if (hadPreviouslyMagnifiedLastFrame) magnifyEnded();
+	}
+	private void magnifyEnded() {
+		isMagnifying = false;
+		hadPreviouslyMagnifiedLastFrame = false;
+		magnifyTimer = magnifyLength;
+		canAttack = false;
+	}
+	public boolean canMagnify() {
+		if (canAttack) return true;
+		else return false;
+	}
+ 	public void otherPlayerMagnified(Vector2 otherPlayer) {
+ 		body.applyForce(vectorComponent(
+				body.getPosition().x, body.getPosition().y, 
+				otherPlayer.x, otherPlayer.y, 
+				150), new Vector2(0,0), true);/**/
+	}
 	
 	public void knockedOut() {
 		knockouts++;
@@ -407,6 +439,23 @@ public class ArenaPlayer {
 	}
 	public void notContactingOtherPlayer(boolean isOtherPlayerSmashing) {
 		notHitBySmash();
+	}
+	
+	public Vector2 vectorComponent(float x1, float  y1, float  x2, float y2, float magnitude) {
+		
+		float xRelativeToFirst = x2 - x1;
+		float yRelativeToFirst = y2 - y1;
+		
+		float pythagifiedLine = (xRelativeToFirst * xRelativeToFirst) + (yRelativeToFirst * yRelativeToFirst);
+		
+		pythagifiedLine = (float) Math.sqrt(pythagifiedLine);
+		
+		float percentOfLine = magnitude / pythagifiedLine;
+		
+		float xIterationSpeed = percentOfLine * xRelativeToFirst; 
+		float yIterationSpeed = percentOfLine * yRelativeToFirst;
+		
+		return new Vector2(xIterationSpeed, yIterationSpeed);
 	}
 	
 	void updateLocationIndicator(int width, int height) {

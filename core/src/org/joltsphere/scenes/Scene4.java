@@ -2,6 +2,7 @@ package org.joltsphere.scenes;
 
 import org.joltsphere.main.JoltSphereMain;
 import org.joltsphere.mechanics.WorldEntities;
+import org.joltsphere.mechanics.MountainClimbingPlayer;
 import org.joltsphere.mechanics.StreamBeamContactListener;
 import org.joltsphere.mechanics.StreamBeamPlayer;
 
@@ -15,7 +16,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
 import com.badlogic.gdx.physics.box2d.World;
 
-public class Scene2 implements Screen {
+public class Scene4 implements Screen {
 
 	final JoltSphereMain game;
 	 
@@ -25,11 +26,11 @@ public class Scene2 implements Screen {
 	WorldEntities ent;
 	    
 	StreamBeamPlayer streamBeam;
-	StreamBeamPlayer otherPlayer;
+	MountainClimbingPlayer otherPlayer;
 	
 	float ppm = JoltSphereMain.ppm;
 	
-	public Scene2 (final JoltSphereMain gam) {
+	public Scene4 (final JoltSphereMain gam) {
 		game = gam;
 		
 		world = new World(new Vector2(0, -9.8f), false); //ignore inactive objects false
@@ -40,17 +41,18 @@ public class Scene2 implements Screen {
 		contLis = new StreamBeamContactListener();
 		
 		ent.createFlatPlatform(world);
+		ent.createPlatform1(world);
 		world = ent.world;
 		world.setContactListener(contLis);
 		
 		streamBeam = new StreamBeamPlayer(world, 200, 200, Color.RED);
-		otherPlayer = new StreamBeamPlayer(world, 1600, 200, Color.BLUE);
+		otherPlayer = new MountainClimbingPlayer(world, 1600, 200, Color.BLUE);
 		
 	} 
 	
 	private void update(float dt) {
 		streamBeam.input(Keys.UP, Keys.DOWN, Keys.LEFT, Keys.RIGHT, Keys.K, Keys.SEMICOLON, Keys.O);
-		otherPlayer.input(Keys.W, Keys.S, Keys.A, Keys.D, Keys.F, Keys.H, Keys.T);
+		otherPlayer.input(Keys.W, Keys.S, Keys.A, Keys.D, Keys.SHIFT_LEFT);
 	}
 	
 		

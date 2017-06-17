@@ -15,7 +15,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
 import com.badlogic.gdx.physics.box2d.World;
 
-public class Scene2 implements Screen {
+public class Scene5 implements Screen {
 
 	final JoltSphereMain game;
 	 
@@ -29,7 +29,7 @@ public class Scene2 implements Screen {
 	
 	float ppm = JoltSphereMain.ppm;
 	
-	public Scene2 (final JoltSphereMain gam) {
+	public Scene5 (final JoltSphereMain gam) {
 		game = gam;
 		
 		world = new World(new Vector2(0, -9.8f), false); //ignore inactive objects false

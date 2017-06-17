@@ -10,6 +10,8 @@ public class StreamBeamContactListener implements ContactListener {
 	
 	private Fixture fa, fb;
 	
+	public int streamBeamGroundContacts = 0, mountainClimberGroundContacts = 0;
+	
 	public StreamBeamContactListener() {
 		
 	}
@@ -19,13 +21,18 @@ public class StreamBeamContactListener implements ContactListener {
 		fa = contact.getFixtureA();
 		fb = contact.getFixtureB();
 		
-	
+		if (isContacting("mountainClimber", "ground")) mountainClimberGroundContacts++;
+		if (isContacting("streamBeam", "ground")) streamBeamGroundContacts++;
+		
 	}
 	
 	public void endContact(Contact contact) {
 		
 		fa = contact.getFixtureA();
 		fb = contact.getFixtureB();
+		
+		if (isContacting("mountainClimber", "ground")) mountainClimberGroundContacts--;
+		if (isContacting("streamBeam", "ground")) streamBeamGroundContacts--;
 		
 	}
 
@@ -34,9 +41,9 @@ public class StreamBeamContactListener implements ContactListener {
 	public void postSolve(Contact contact, ContactImpulse impulse) {}
 	
 	private boolean isContacting(String f1, String f2) {
-		 if (fa.getUserData().equals(f1) && fb.getUserData().equals(f2))
+		 if (fa.getUserData() == f1 && fb.getUserData() == f2)
 			return true;
-		else if (fa.getUserData().equals(f2) && fb.getUserData().equals(f1))
+		else if (fa.getUserData() == f2 && fb.getUserData() == f1)
 			return true;
 		else return false;
 	}
