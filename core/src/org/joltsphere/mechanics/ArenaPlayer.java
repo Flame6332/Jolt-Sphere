@@ -379,7 +379,7 @@ public class ArenaPlayer {
 			body.applyForce(vectorComponent(
 					body.getPosition().x, body.getPosition().y, 
 					otherPlayer.x, otherPlayer.y, 
-					0), new Vector2(0,0), true);
+					100), new Vector2(0,0), true);
 			isMagnifying = true;
 			attackCooldown = 0;
 			magnifyTimer -= 60*dt;
@@ -404,7 +404,7 @@ public class ArenaPlayer {
  		body.applyForce(vectorComponent(
 				body.getPosition().x, body.getPosition().y, 
 				otherPlayer.x, otherPlayer.y, 
-				150), new Vector2(0,0), true);/**/
+				100), new Vector2(0,0), true);/**/
 	}
 	
 	public void knockedOut() {
