@@ -36,6 +36,7 @@ public class StreamBeamPlayer {
 	private CircleShape sightCircle;
 	
 	private Color color;
+	public float density() {return 10f;};
 	
 	private boolean isGrounded = false;
 	
@@ -67,7 +68,8 @@ public class StreamBeamPlayer {
 		circle.setRadius(50 / ppm);
 		fdef.shape = circle;
 		fdef.friction = 0.1f;
-		fdef.density = 10;
+		fdef.density = density();
+		System.out.println("density " + density());
 		fdef.restitution = 0;
 		fdef.filter.categoryBits = 1;
 		fdef.filter.maskBits = 1;
@@ -161,7 +163,7 @@ public class StreamBeamPlayer {
 	public void jump() {
 		if (isGrounded) {
 			body.setLinearVelocity(body.getLinearVelocity().x * 0.3f, body.getLinearVelocity().y * 0.3f);
-			body.applyLinearImpulse(0, 16, 0, 0, true);
+			body.applyLinearImpulse(new Vector2(0, 16), body.getPosition(), true);
 		}
 		//body.applyForceToCenter(0, 40, true);
 	}
@@ -212,7 +214,7 @@ public class StreamBeamPlayer {
 			fireBody.applyLinearImpulse(vectorComponent(
 					body.getPosition().x, body.getPosition().y,
 					sightBody.getPosition().x, sightBody.getPosition().y, 
-					8f), new Vector2(0,0), true);
+					8f), fireBody.getPosition(), true);
 		}
 		public void update() {
 			if (deathCountdown < 0) {

@@ -85,6 +85,11 @@ public class JoltSphereMain extends Game {
 		
 		super.render(); //renders in screens
 		
+		cam.position.set(width/2, height/2, 0);
+		cam.zoom = 1;
+		phys2Dcam.position.set(width/2/ppm, height/2/ppm, 0);
+		phys2Dcam.zoom = 1;
+		
 		Gdx.graphics.setTitle(title + " : " + subtitle + "     FPS: " + Gdx.graphics.getFramesPerSecond());
 
 		if (Gdx.input.isKeyJustPressed(Keys.ENTER) && !Gdx.graphics.isFullscreen()) Gdx.graphics.setFullscreenMode(Gdx.graphics.getDisplayMode());

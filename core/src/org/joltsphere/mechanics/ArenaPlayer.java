@@ -252,14 +252,14 @@ public class ArenaPlayer {
 			if (canSmashJump) smashJump();
 			else { 
 				body.setLinearVelocity(body.getLinearVelocity().x * 0.3f, body.getLinearVelocity().y * 0.3f);
-				body.applyLinearImpulse(0, 280f * 0.016666666f, 0, 0, true);
+				body.applyLinearImpulse(new Vector2(0, 280f * 0.016666666f), body.getPosition(), true);
 				jumpHoldTimer = jumpHoldPhase;
 			}
 		}
 		else if (!hasDoubled) {
 			body.setAngularVelocity(0);
 			body.setLinearVelocity(0, 0);
-			body.applyLinearImpulse(0, 310f * 0.01666666f, 0, 0, true);
+			body.applyLinearImpulse(new Vector2(0, 310f * 0.01666666f), body.getPosition(), true);
 			hasDoubled = true;
 		}
 	}
@@ -297,7 +297,7 @@ public class ArenaPlayer {
 		smashJumpPeriod = smashJumpLength;
 		body.setAngularVelocity(body.getAngularVelocity() * 0.3f); // rotational speed decreased 30%
 		body.setLinearVelocity(body.getLinearVelocity().x * 0.3f, body.getLinearVelocity().y * 0.1f); // velocities decreased 30% and 10%
-		body.applyLinearImpulse(0, 2000000f * 0.0166666f, 0, 0, true);
+		body.applyLinearImpulse(new Vector2(0, 2000000f * 0.0166666f), body.getPosition(), true);
 	}
 	private void updateSmashJump(float dt) {
 		if (smashJumpPeriod > 0) { // if you can still smash jump
@@ -370,7 +370,7 @@ public class ArenaPlayer {
 			wasHitBySmash = false;
 			fixture.setRestitution(beforeContactRestitution);
 			float scale = 100f / maximumContactRestitution * currentRecievingSmashRestitution;
-			body.applyLinearImpulse(body.getLinearVelocity().x * scale * 0.01666666f, body.getLinearVelocity().y * scale * 0.01666666f, 0, 0, true);
+			body.applyLinearImpulse(new Vector2(body.getLinearVelocity().x * scale * 0.01666666f, body.getLinearVelocity().y * scale * 0.01666666f), body.getPosition(), true);
 		}
 	}
 	

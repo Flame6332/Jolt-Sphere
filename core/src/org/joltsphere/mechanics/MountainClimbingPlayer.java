@@ -85,12 +85,13 @@ public class MountainClimbingPlayer {
 	public void jump() {
 		if (isGrounded) {
 			body.setLinearVelocity(body.getLinearVelocity().x * 0.3f, body.getLinearVelocity().y * 0.3f);
-			body.applyLinearImpulse(0, 16, 0, 0, true);
+			body.applyLinearImpulse(new Vector2(0, 16), body.getPosition(), true);
 		}
 		//body.applyForceToCenter(0, 40, true);
 	}
-	
-	
+	public void fly() {
+		body.applyForceToCenter(new Vector2(0, 60), true);
+	}
 
 	public Vector2 vectorComponent(float x1, float  y1, float  x2, float y2, float magnitude) {
 		
@@ -110,10 +111,11 @@ public class MountainClimbingPlayer {
 	}
 	
 
-	public void input(int up, int down, int left, int right, int modifier) {	
+	public void input(int up, int down, int left, int right, int modifier, boolean fly) {	
 		if (Gdx.input.isKeyPressed(left)) moveLeft();
 		if (Gdx.input.isKeyPressed(right)) moveRight();
-		if (Gdx.input.isKeyJustPressed(up)) jump();
+		if (Gdx.input.isKeyPressed(up) && fly) fly();
+		else if (Gdx.input.isKeyJustPressed(up)) jump();
 	}
 	
 }

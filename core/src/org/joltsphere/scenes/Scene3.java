@@ -55,7 +55,7 @@ public class Scene3 implements Screen {
 	
 	private void update(float dt) {
 		streamBeam.input(Keys.UP, Keys.DOWN, Keys.LEFT, Keys.RIGHT, Keys.K, Keys.SEMICOLON, Keys.O);
-		mountainClimber.input(Keys.W, Keys.S, Keys.A, Keys.D, Keys.SHIFT_LEFT);
+		mountainClimber.input(Keys.W, Keys.S, Keys.A, Keys.D, Keys.SHIFT_LEFT, false);
 		streamBeam.update(dt, contLis.streamBeamGroundContacts);
 		mountainClimber.update(dt, contLis.mountainClimberGroundContacts);
 		obj.update(dt);

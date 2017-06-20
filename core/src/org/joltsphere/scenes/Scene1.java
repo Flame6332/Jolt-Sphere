@@ -146,6 +146,8 @@ public class Scene1 implements Screen {
 		//game.phys2Dcam.position.set(pos.x/ppm, pos.y/ppm, 0);
 		//game.phys2Dcam.zoom = pos.z;
 		*/
+		game.cam.zoom = 1;
+		game.phys2Dcam.zoom = 1;
 		
 		game.cam.update();
 		game.phys2Dcam.update();
