@@ -84,11 +84,11 @@ public class Scene1 implements Screen {
 		}
 		
 		if (contLis.pvpContact > 0) {
-			arena.players.get(0).contactingOtherPlayer(arena.players.get(1).isSmashing);
-			arena.players.get(1).contactingOtherPlayer(arena.players.get(0).isSmashing);
+			arena.players.get(0).contactingOtherPlayer(arena.players.get(1));
+			arena.players.get(1).contactingOtherPlayer(arena.players.get(0));
 		} else {
-			arena.players.get(0).notContactingOtherPlayer(arena.players.get(1).isSmashing);
-			arena.players.get(1).notContactingOtherPlayer(arena.players.get(0).isSmashing);
+			arena.players.get(0).notContactingOtherPlayer(arena.players.get(1));
+			arena.players.get(1).notContactingOtherPlayer(arena.players.get(0));
 		}
 		
 		/*if (Controllers.getControllers().get(0).getButton(XBox360.BUTTON_A)) {
@@ -146,8 +146,8 @@ public class Scene1 implements Screen {
 		//game.phys2Dcam.position.set(pos.x/ppm, pos.y/ppm, 0);
 		//game.phys2Dcam.zoom = pos.z;
 		*/
-		game.cam.zoom = 1;
-		game.phys2Dcam.zoom = 1;
+		game.cam.zoom = 1f;
+		game.phys2Dcam.zoom = 1f;
 		
 		game.cam.update();
 		game.phys2Dcam.update();

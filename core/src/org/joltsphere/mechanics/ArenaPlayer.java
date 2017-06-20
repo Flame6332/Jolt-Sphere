@@ -71,7 +71,7 @@ public class ArenaPlayer {
 	public float beforeContactRestitution = 0;
 	public float maximumContactRestitution = 1 / minimumEnergy * recievingSmashRestitution;
 	
-	public int jumpDelay = 5;
+	public int jumpDelay = 7;
 	public float jumpTimer = jumpDelay;
 	
 	public float jumpHoldPhase = 15; //half jump time
@@ -363,14 +363,12 @@ public class ArenaPlayer {
 	
 	public void hitBySmash() { //called when get smashed
 		wasHitBySmash = true;
-		fixture.setRestitution(currentRecievingSmashRestitution);
 	}
-	public void notHitBySmash() { // called whenever there isnt any contact with player in the update cycle
+	public void notHitBySmash(ArenaPlayer otherPlayer) { // called whenever there isnt any contact with player in the update cycle
 		if (wasHitBySmash) {
 			wasHitBySmash = false;
-			fixture.setRestitution(beforeContactRestitution);
-			float scale = 100f / maximumContactRestitution * currentRecievingSmashRestitution;
-			body.applyLinearImpulse(new Vector2(body.getLinearVelocity().x * scale * 0.01666666f, body.getLinearVelocity().y * scale * 0.01666666f), body.getPosition(), true);
+			float scale = 500f / maximumContactRestitution * currentRecievingSmashRestitution;
+			body.applyLinearImpulse(new Vector2(otherPlayer.body.getLinearVelocity().x * scale * 0.01666666f, otherPlayer.body.getLinearVelocity().y * scale * 0.01666666f), body.getPosition(), true);
 		}
 	}
 	
@@ -434,11 +432,11 @@ public class ArenaPlayer {
 		currentRecievingSmashRestitution = 1f/energyTimer * recievingSmashRestitution; 
 	}
 	
-	public void contactingOtherPlayer(boolean isOtherPlayerSmashing) {
-		if (isOtherPlayerSmashing) hitBySmash();
+	public void contactingOtherPlayer(ArenaPlayer otherPlayer) {
+		if (otherPlayer.isSmashing) hitBySmash();
 	}
-	public void notContactingOtherPlayer(boolean isOtherPlayerSmashing) {
-		notHitBySmash();
+	public void notContactingOtherPlayer(ArenaPlayer otherPlayer) {
+		notHitBySmash(otherPlayer);
 	}
 	
 	public Vector2 vectorComponent(float x1, float  y1, float  x2, float y2, float magnitude) {

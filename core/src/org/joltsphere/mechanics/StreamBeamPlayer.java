@@ -69,7 +69,6 @@ public class StreamBeamPlayer {
 		fdef.shape = circle;
 		fdef.friction = 0.1f;
 		fdef.density = density();
-		System.out.println("density " + density());
 		fdef.restitution = 0;
 		fdef.filter.categoryBits = 1;
 		fdef.filter.maskBits = 1;
@@ -211,10 +210,13 @@ public class StreamBeamPlayer {
 		public FiredBall() {
 			fireBody = world.createBody(bdefFire);
 			fireBody.createFixture(fdefFire).setUserData("fire");
-			fireBody.applyLinearImpulse(vectorComponent(
+			Vector2 fireVector = vectorComponent(
 					body.getPosition().x, body.getPosition().y,
 					sightBody.getPosition().x, sightBody.getPosition().y, 
-					8f), fireBody.getPosition(), true);
+					8f);
+			fireBody.applyLinearImpulse(fireVector, fireBody.getPosition(), true);
+			// there's a reason that we didn't add recoil :(
+			//body.applyLinearImpulse(-fireVector.x, -fireVector.y, body.getPosition().x, body.getPosition().y, true);
 		}
 		public void update() {
 			if (deathCountdown < 0) {

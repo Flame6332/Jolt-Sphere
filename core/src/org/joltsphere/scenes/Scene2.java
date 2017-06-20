@@ -40,7 +40,7 @@ public class Scene2 implements Screen {
 		contLis = new StreamBeamContactListener();
 		
 		ent.createFlatPlatform(world);
-		world = ent.world;
+		ent.createPlatform4(world);
 		world.setContactListener(contLis);
 		
 		streamBeam = new StreamBeamPlayer(world, 200, 200, Color.RED);

@@ -64,8 +64,5 @@
   <object id="59" x="2114.29" y="2607.14">
    <polygon points="0,0 400,-92.8571 271.429,328.571"/>
   </object>
-  <object id="60" x="2035.71" y="714.286" width="328.571" height="321.429">
-   <ellipse/>
-  </object>
  </objectgroup>
 </map>

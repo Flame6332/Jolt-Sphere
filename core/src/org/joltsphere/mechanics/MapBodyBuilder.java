@@ -4,11 +4,13 @@ import com.badlogic.gdx.maps.Map;
 import com.badlogic.gdx.maps.MapObject;
 import com.badlogic.gdx.maps.MapObjects;
 import com.badlogic.gdx.maps.objects.CircleMapObject;
+import com.badlogic.gdx.maps.objects.EllipseMapObject;
 import com.badlogic.gdx.maps.objects.PolygonMapObject;
 import com.badlogic.gdx.maps.objects.PolylineMapObject;
 import com.badlogic.gdx.maps.objects.RectangleMapObject;
 import com.badlogic.gdx.maps.objects.TextureMapObject;
 import com.badlogic.gdx.math.Circle;
+import com.badlogic.gdx.math.Ellipse;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
@@ -49,8 +51,8 @@ public class MapBodyBuilder {
             else if (object instanceof PolylineMapObject) {
                 shape = getPolyline((PolylineMapObject)object);
             }
-            else if (object instanceof CircleMapObject) {
-                shape = getCircle((CircleMapObject)object);
+            else if (object instanceof EllipseMapObject) {
+                shape = getEllipse((EllipseMapObject)object);
             }
             else {
                 continue;
@@ -80,8 +82,8 @@ public class MapBodyBuilder {
         return polygon;
     }
 
-    private static CircleShape getCircle(CircleMapObject circleObject) {
-        Circle circle = circleObject.getCircle();
+    private static CircleShape getEllipse(EllipseMapObject ellipseObject) {
+        Ellipse ellipse = ellipseObject.getCircle();
         CircleShape circleShape = new CircleShape();
         circleShape.setRadius(circle.radius / ppt);
         circleShape.setPosition(new Vector2(circle.x / ppt, circle.y / ppt));
@@ -95,7 +97,7 @@ public class MapBodyBuilder {
         float[] worldVertices = new float[vertices.length];
 
         for (int i = 0; i < vertices.length; ++i) {
-            System.out.println(vertices[i]);
+            //System.out.println(vertices[i]);
             worldVertices[i] = vertices[i] / ppt;
         }
 
