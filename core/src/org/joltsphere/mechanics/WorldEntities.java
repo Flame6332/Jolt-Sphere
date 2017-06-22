@@ -1,6 +1,7 @@
 package org.joltsphere.mechanics;
 
 import org.joltsphere.main.JoltSphereMain;
+import org.joltsphere.misc.EllipseFixture;
 
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.BodyDef;
@@ -201,7 +202,17 @@ public class WorldEntities {
 		
 		world.createBody(bdef).createFixture(fdef).setUserData("ground");
 		
+		bdef.position.y = 1200 / ppm;
+		bdef.type = BodyType.DynamicBody;
+		EllipseFixture.createEllipseFixtures(world.createBody(bdef), 135/ppm, 60 /ppm, 3, 0.1f, 1);
+		bdef.position.y = 1260 / ppm;
+		EllipseFixture.createEllipseFixtures(world.createBody(bdef), 135/ppm, 60 /ppm, 3, 0.8f, 1);
+		bdef.position.y = 1140 / ppm;
+		EllipseFixture.createEllipseFixtures(world.createBody(bdef), 135/ppm, 60 /ppm, 3, 0.4f, 1);
+		
 		circle.dispose();
+		
+		
 		
 	}
 	

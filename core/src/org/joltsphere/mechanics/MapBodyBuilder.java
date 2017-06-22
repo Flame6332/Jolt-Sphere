@@ -1,15 +1,15 @@
 package org.joltsphere.mechanics;
 
+import org.joltsphere.misc.EllipseFixture;
+
 import com.badlogic.gdx.maps.Map;
 import com.badlogic.gdx.maps.MapObject;
 import com.badlogic.gdx.maps.MapObjects;
-import com.badlogic.gdx.maps.objects.CircleMapObject;
 import com.badlogic.gdx.maps.objects.EllipseMapObject;
 import com.badlogic.gdx.maps.objects.PolygonMapObject;
 import com.badlogic.gdx.maps.objects.PolylineMapObject;
 import com.badlogic.gdx.maps.objects.RectangleMapObject;
 import com.badlogic.gdx.maps.objects.TextureMapObject;
-import com.badlogic.gdx.math.Circle;
 import com.badlogic.gdx.math.Ellipse;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
@@ -41,6 +41,8 @@ public class MapBodyBuilder {
             }
 
             Shape shape;
+            boolean isEllipse = false;
+            float ellipseWidth = 0, ellipseHeight = 0;
 
             if (object instanceof RectangleMapObject) {
                 shape = getRectangle((RectangleMapObject)object);
@@ -52,20 +54,31 @@ public class MapBodyBuilder {
                 shape = getPolyline((PolylineMapObject)object);
             }
             else if (object instanceof EllipseMapObject) {
-                shape = getEllipse((EllipseMapObject)object);
+                getEllipse((EllipseMapObject)object).x = ellipseWidth;
+                getEllipse((EllipseMapObject)object).y = ellipseHeight;
+                isEllipse = true;
+                shape = null;
             }
             else {
                 continue;
             }
-
+            
+        
             BodyDef bd = new BodyDef();
             bd.type = BodyType.StaticBody;
             Body body = world.createBody(bd);
-            body.createFixture(shape, 1);
+            
+            if (isEllipse) {
+            	System.out.println("chicken");
+            	EllipseFixture.createEllipseFixtures(body, ellipseWidth, ellipseHeight, 1, 0, 1);
+            }
+            else {
+            	body.createFixture(shape, 1);
+                shape.dispose();
+            }
 
             bodies.add(body);
 
-            shape.dispose();
         }
         return bodies;
     }
@@ -82,12 +95,9 @@ public class MapBodyBuilder {
         return polygon;
     }
 
-    private static CircleShape getEllipse(EllipseMapObject ellipseObject) {
-        Ellipse ellipse = ellipseObject.getCircle();
-        CircleShape circleShape = new CircleShape();
-        circleShape.setRadius(circle.radius / ppt);
-        circleShape.setPosition(new Vector2(circle.x / ppt, circle.y / ppt));
-        return circleShape;
+    private static Vector2 getEllipse(EllipseMapObject ellipseObject) {
+        Ellipse ellipse = ellipseObject.getEllipse();
+        return new Vector2(ellipse.width, ellipse.height);
     }
 
     private static PolygonShape getPolygon(PolygonMapObject polygonObject) {
