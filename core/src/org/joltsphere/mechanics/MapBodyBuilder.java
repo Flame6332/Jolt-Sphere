@@ -42,6 +42,7 @@ public class MapBodyBuilder {
             Shape shape;
             boolean isEllipse = false;
             float ellipseWidth = 0, ellipseHeight = 0;
+            Vector2 objectPos = new Vector2(0,0);
 
             if (object instanceof RectangleMapObject) {
                 shape = getRectangle((RectangleMapObject)object);
@@ -53,8 +54,11 @@ public class MapBodyBuilder {
                 shape = getPolyline((PolylineMapObject)object);
             }
             else if (object instanceof EllipseMapObject) {
-                getEllipse((EllipseMapObject)object).x = ellipseWidth;
-                getEllipse((EllipseMapObject)object).y = ellipseHeight;
+            	Ellipse ellipse = ((EllipseMapObject) object).getEllipse();
+                ellipseWidth = ellipse.width / ppt;
+                ellipseHeight = ellipse.height / ppt;
+                objectPos.x = ellipse.x / ppt + (ellipseWidth / 2f);
+                objectPos.y = ellipse.y / ppt + (ellipseHeight / 2f);
                 isEllipse = true;
                 shape = null;
             }
@@ -65,14 +69,13 @@ public class MapBodyBuilder {
         
             BodyDef bd = new BodyDef();
             bd.type = BodyType.StaticBody;
+            bd.position.set(objectPos);
             Body body = world.createBody(bd);
             
             if (isEllipse) {
-            	System.out.println("chicken");
-            	EllipseFixture.createEllipseFixtures(body, ellipseWidth, ellipseHeight, 1, 0, 1);
+            	body = EllipseFixture.createEllipseFixtures(body, ellipseWidth / 2f, ellipseHeight / 2f, 1, 0, 1);
             }
             else {
-            	System.out.println("chickennoodle");
             	body.createFixture(shape, 1);
                 shape.dispose();
             }
@@ -93,11 +96,6 @@ public class MapBodyBuilder {
                          size,
                          0.0f);
         return polygon;
-    }
-
-    private static Vector2 getEllipse(EllipseMapObject ellipseObject) {
-        Ellipse ellipse = ellipseObject.getEllipse();
-        return new Vector2(ellipse.width, ellipse.height);
     }
 
     private static PolygonShape getPolygon(PolygonMapObject polygonObject) {

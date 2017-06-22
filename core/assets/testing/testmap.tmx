@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.0" orientation="orthogonal" renderorder="right-down" width="300" height="100" tilewidth="320" tileheight="180" nextobjectid="68">
- <objectgroup color="#ff0004" name="terrain">
+ <objectgroup color="#ff0004" name="terrain" offsetx="2528" offsety="1144">
   <object id="8" x="85.7143" y="17964.3">
    <polyline points="0,0 4035.71,-200"/>
   </object>
@@ -64,10 +64,7 @@
   <object id="59" x="2114.29" y="2607.14">
    <polygon points="0,0 400,-92.8571 271.429,328.571"/>
   </object>
-  <object id="63" x="5421.43" y="4521.43" width="3150" height="350">
-   <ellipse/>
-  </object>
-  <object id="64" x="1785.71" y="328.571" width="1200" height="342.857">
+  <object id="64" x="2057.71" y="-759.429" width="128" height="1846.86">
    <ellipse/>
   </object>
  </objectgroup>

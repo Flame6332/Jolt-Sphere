@@ -12,8 +12,14 @@ public class EllipseFixture {
 	
 	private static float hW, hH;
 	
-	public static void createEllipseFixtures(Body body, float halfWidth, float halfHeight, float density, float restitution, float friction) {
-		hW = halfWidth; hH = halfHeight; 
+	public static Body createEllipseFixtures(Body body, float halfWidth, float halfHeight, float density, float restitution, float friction) {
+		boolean shouldRotate = false;
+		if (halfWidth > halfHeight) {
+			hW = halfWidth; hH = halfHeight; 
+		}
+		else {
+			hH = halfWidth; hW = halfHeight;
+		}
 		
 		FixtureDef fdef = new FixtureDef();
 		fdef.density = density;
@@ -36,16 +42,17 @@ public class EllipseFixture {
 		for (int i = 1; i <= 5; i++) {
 			
 			int j;
-			float iterationSize = faceLength / 30f;
-			float tinyIterationSize = iterationSize/30f;
+			float dtl = 10000f; // detail
+			float iterationSize = faceLength / dtl;
+			float tinyIterationSize = iterationSize/dtl;
 			float prevTempX = 0;
-			for (j = 1; j <= 30; j++) {
+			for (j = 1; j <= dtl; j++) {
 				float currentW = iterationSize * j; // gets current width of triangle
 				float currentH = ellipseFunction(prevX - currentW)  - prevY; // current height of face triangle
 				if (Math.hypot(currentW, currentH) > faceLength) break;
 				prevTempX = prevX - currentW; // the coordinates of this iteration, if still looping
 			}
-			for (int n = 1; n <= 30; n++) {
+			for (int n = 1; n <= dtl; n++) {
 				float currentW = prevX - prevTempX - (tinyIterationSize * n); // gets current precise width of triangle
 				float currentH = ellipseFunction(prevTempX - (tinyIterationSize * n))  - prevY; // current precise height of face triangle
 				if (Math.hypot(currentW, currentH) > faceLength) break; // found the right size
@@ -64,26 +71,28 @@ public class EllipseFixture {
 		body.createFixture(fdef);
 		
 		for (int i = 0; i <= 7; i++) {
+			System.out.println(v[i].x);
 			v[i] = new Vector2(v[i].x * -1, v[i].y);
 		}
 		poly.set(v);
 		fdef.shape = poly;
-		body.createFixture(fdef);
+		//body.createFixture(fdef);
 		
 		for (int i = 0; i <= 7; i++) {
 			v[i] = new Vector2(v[i].x, v[i].y * -1);
 		}
 		poly.set(v);
 		fdef.shape = poly;
-		body.createFixture(fdef);
+		//body.createFixture(fdef);
 		
 		for (int i = 0; i <= 7; i++) {
 			v[i] = new Vector2(v[i].x * -1, v[i].y);
 		}
 		poly.set(v);
 		fdef.shape = poly;
-		body.createFixture(fdef);
+		//body.createFixture(fdef);
 		
+		return body;
 	}
 
 	private static float ellipseFunction(float x) {
