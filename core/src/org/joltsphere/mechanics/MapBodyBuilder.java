@@ -17,7 +17,6 @@ import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 import com.badlogic.gdx.physics.box2d.ChainShape;
-import com.badlogic.gdx.physics.box2d.CircleShape;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.physics.box2d.Shape;
 import com.badlogic.gdx.physics.box2d.World;
@@ -73,6 +72,7 @@ public class MapBodyBuilder {
             	EllipseFixture.createEllipseFixtures(body, ellipseWidth, ellipseHeight, 1, 0, 1);
             }
             else {
+            	System.out.println("chickennoodle");
             	body.createFixture(shape, 1);
                 shape.dispose();
             }
