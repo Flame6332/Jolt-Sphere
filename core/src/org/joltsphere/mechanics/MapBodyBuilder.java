@@ -73,7 +73,7 @@ public class MapBodyBuilder {
             Body body = world.createBody(bd);
             
             if (isEllipse) {
-            	body = EllipseFixture.createEllipseFixtures(body, ellipseWidth / 2f, ellipseHeight / 2f, 1, 0, 1);
+            	body = EllipseFixture.createEllipseFixtures(body, 1, 0, 1, ellipseWidth / 2f, ellipseHeight / 2f, "");
             }
             else {
             	body.createFixture(shape, 1);

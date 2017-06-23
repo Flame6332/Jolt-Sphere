@@ -1,6 +1,7 @@
 package org.joltsphere.mountain;
 
 import org.joltsphere.main.JoltSphereMain;
+import org.joltsphere.misc.EllipseFixture;
 
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
@@ -20,9 +21,9 @@ public class MountainObjects {
 	
 	private float ppm = JoltSphereMain.ppm;
 	private final int width = JoltSphereMain.WIDTH, height = JoltSphereMain.HEIGHT;
-	private float mountainWidth = width * 0.8f;
+	private float mountainWidth = width;
 	private float borderSize = (width - (mountainWidth)) / 2f;
-	private float fallingSpeed = 0.4f;
+	private float fallingSpeed = 0.7f;
 	private float tallestPlatformHeight;
 	
 	public MountainObjects(World world) {
@@ -89,6 +90,7 @@ public class MountainObjects {
 	private class SidePlatform {
 		
 		public Body body;
+		public Body body2;
 		public boolean isDead = false;
 		
 		public SidePlatform(int sizeCount, boolean hasFallingStarted) {
@@ -96,9 +98,10 @@ public class MountainObjects {
 			if (!hasFallingStarted) altitude = (sizeCount * 300 / ppm); // altitude based off of array size 
 			else altitude = tallestPlatformHeight;
 			
-			float scale = (float) (Math.random() *0.5f) + 1.7f; // returns a scale between 1 and 2 then scales it by 0.7
+			float scale = (float) (Math.random() *0.7f) + 1.2f; // returns a scale between 1 and 2 then scales it by 0.7
 			
-			if ((sizeCount%2) == 0) createLeftFork(borderSize / ppm, altitude, scale); // if array size is even 
+			//if ((sizeCount%2) == 0) createLeftFork(borderSize / ppm, altitude, scale); // if array size is even 
+			if (Math.random() < 0.5f) createLeftFork(borderSize / ppm, altitude, scale); // if array size is even 
 			else createRightFork((width - borderSize) / ppm, altitude, scale);
 		}
 		
@@ -109,17 +112,18 @@ public class MountainObjects {
 			createFork(-1, x, y, scale);
 		}
 		private void createFork(int dir, float x, float y, float scl) {
+			//y= height / ppm;
 			BodyDef bdef = new BodyDef();
 			bdef.type = BodyType.KinematicBody;
 			bdef.position.x = x;
 			bdef.position.y = y;
-			bdef.bullet = true;
+			bdef.bullet = false;
 			
 			PolygonShape polygon = new PolygonShape();
 			Vector2[] v = new Vector2[4];
-			v[0] = new Vector2(0 *scl / ppm, 50*scl / ppm);
-			v[1] = new Vector2(800 * dir *scl / ppm, 50*scl / ppm);
-			v[2] = new Vector2(800 * dir *scl / ppm, 30*scl / ppm);
+			v[0] = new Vector2(0 *scl / ppm, ((float) Math.random() * 200f + 50*scl) / ppm);
+			v[1] = new Vector2(((float) Math.random() * 200f + 800 * dir *scl) / ppm, 50*scl / ppm);
+			v[2] = new Vector2(((float) Math.random() * 200f + 800 * dir *scl) / ppm, 30*scl / ppm);
 			v[3] = new Vector2(0 *scl / ppm, 0*scl / ppm);
 			
 			polygon.set(v);
@@ -128,9 +132,16 @@ public class MountainObjects {
 			fdef.shape = polygon;
 			fdef.friction = 1;
 			
+			//body.createFixture(fdef).setUserData("ground");
+			bdef.position.set((width / 2f + dir * 400) /ppm, y);
 			body = world.createBody(bdef); 
-			body.createFixture(fdef).setUserData("ground");
+			EllipseFixture.createEllipseFixtures(body, fdef, ((float) Math.random() * 100f + 400) / ppm, 100 / ppm, "ground");
+			dir *= -1; bdef.position.set((width / 2f + dir * 400) /ppm, y);
+			body2 = world.createBody(bdef); 	
+			EllipseFixture.createEllipseFixtures(body2, fdef, 100 / ppm, ((float) Math.random() * 100f + 400) /ppm, "ground");
+			
 			body.setLinearVelocity(0, -fallingSpeed);
+			body2.setLinearVelocity(0, -fallingSpeed);
 			
 			polygon.dispose();
 		}
@@ -142,6 +153,7 @@ public class MountainObjects {
 		private void dispose() {
 			body.destroyFixture(body.getFixtureList().first());
 			world.destroyBody(body);
+			world.destroyBody(body2);
 			isDead = true;
 		}
 		

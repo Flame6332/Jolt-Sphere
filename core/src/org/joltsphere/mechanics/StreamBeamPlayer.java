@@ -217,6 +217,7 @@ public class StreamBeamPlayer {
 			fireBody.applyLinearImpulse(fireVector, fireBody.getPosition(), true);
 			// there's a reason that we didn't add recoil :(
 			//body.applyLinearImpulse(-fireVector.x, -fireVector.y, body.getPosition().x, body.getPosition().y, true);
+			if (density() > 1) body.applyLinearImpulse(-fireVector.x *0.07f, -fireVector.y *0.07f, body.getPosition().x, body.getPosition().y, true);
 		}
 		public void update() {
 			if (deathCountdown < 0) {

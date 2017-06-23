@@ -204,11 +204,11 @@ public class WorldEntities {
 		
 		bdef.position.y = 1200 / ppm;
 		bdef.type = BodyType.DynamicBody;
-		EllipseFixture.createEllipseFixtures(world.createBody(bdef), 135/ppm, 60 /ppm, 3, 0.1f, 1);
-		bdef.position.y = 1260 / ppm;
-		EllipseFixture.createEllipseFixtures(world.createBody(bdef), 135/ppm, 60 /ppm, 3, 0.8f, 1);
-		bdef.position.y = 1140 / ppm;
-		EllipseFixture.createEllipseFixtures(world.createBody(bdef), 135/ppm, 60 /ppm, 3, 0.4f, 1);
+		EllipseFixture.createEllipseFixtures(world.createBody(bdef), fdef, 135/ppm, 60 /ppm, "");
+		bdef.position.y = 1700 / ppm;
+		EllipseFixture.createEllipseFixtures(world.createBody(bdef), fdef, 135/ppm, 60 /ppm, "");
+		bdef.position.y = 800 / ppm;
+		EllipseFixture.createEllipseFixtures(world.createBody(bdef), fdef, 135/ppm, 60 /ppm, "");
 		
 		circle.dispose();
 		
