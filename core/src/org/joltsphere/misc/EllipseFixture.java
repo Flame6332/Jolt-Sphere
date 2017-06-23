@@ -30,6 +30,7 @@ public class EllipseFixture {
 		}
 		else {
 			hH = halfWidth; hW = halfHeight;
+			shouldRotate = true;
 		}
 		
 		PolygonShape poly = new PolygonShape();
