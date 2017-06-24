@@ -1,6 +1,7 @@
 package org.joltsphere.mechanics;
 
 import org.joltsphere.main.JoltSphereMain;
+import org.joltsphere.misc.Misc;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
@@ -39,6 +40,7 @@ public class StreamBeamPlayer {
 	public float density() {return 10f;};
 	
 	private boolean isGrounded = false;
+	private boolean canDoubleJump = false;
 	
 	private float firingRate = 0.016667f; // the smaller the faster
 	private float ballsTryingToBeFired = 0;
@@ -51,10 +53,132 @@ public class StreamBeamPlayer {
 	private float ppm = JoltSphereMain.ppm;
 	private float dt = 0.01666f;
 	
-	public StreamBeamPlayer(World world, int x, int y, Color color) {
+	public StreamBeamPlayer(World world, float x, float y, Color color) {
 		this.world = world;
 		this.color = color;
 		
+		createObjects(x, y);
+			
+	}
+	
+	public void shapeRender(ShapeRenderer shapeRender) {
+		shapeRender.setColor(color);
+		shapeRender.circle(body.getPosition().x*ppm,body.getPosition().y*ppm, 50);
+		shapeRender.setColor(Color.GOLD);
+		for (int i = 0; i < firedBalls.size; i++) {
+			shapeRender.circle(firedBalls.get(i).fireBody.getPosition().x*ppm, firedBalls.get(i).fireBody.getPosition().y*ppm, 16);
+		}
+		shapeRender.setColor(Color.WHITE);
+		shapeRender.circle(sightBody.getPosition().x * ppm, sightBody.getPosition().y * ppm, 20);
+	}
+	
+	public void update(float dt, int groundContacts) {
+		this.dt = dt;
+		updateFiredBalls();
+		
+		if (groundContacts > 0) isGrounded = true;
+		else isGrounded = false;
+		
+		if (isGrounded) canDoubleJump = true;
+		
+	}
+
+	public void moveLeft() {
+		moveHorizontal(-1);
+	}
+	public void moveRight() {
+		moveHorizontal(1);
+	}
+	private void moveHorizontal(int dir) {
+		body.applyForceToCenter(30*dir, 0, true);
+		body.applyTorque(-5 * dir, true);
+	}
+	public void jump() {
+		if (isGrounded) {
+			body.setLinearVelocity(body.getLinearVelocity().x * 0.3f, body.getLinearVelocity().y * 0.3f);
+			body.applyLinearImpulse(new Vector2(0, 16), body.getPosition(), true);
+		}
+		else if (canDoubleJump) {
+			canDoubleJump = false;
+			body.setLinearVelocity(0, 0);
+			body.applyLinearImpulse(new Vector2(0, 9), body.getPosition(), true);
+		}
+		//body.applyForceToCenter(0, 40, true);
+	}
+	
+	public void rotateAimLeft() {
+		rotateAim(-1);
+	}
+	public void rotateAimRight() {
+		rotateAim(1);
+	}
+	private void rotateAim(int dir) {
+		didRotateLastFrame = true;
+		sightRotationAmount -= currentRotationSpeed * dir * dt / 0.016666f;
+		rotatingBody.setTransform(rotatingBody.getPosition(), sightRotationAmount);
+		if (currentRotationSpeed < 0.15f)
+			currentRotationSpeed += 0.011 * dt / 0.0166666f;
+	}
+	public void notRotating() {
+		if (didRotateLastFrame) {
+			didRotateLastFrame = false;
+			currentRotationSpeed = rotationSpeed;
+		}
+	}
+	
+	public void fire() {
+		ballsTryingToBeFired += (dt / firingRate);
+		int ballsToFireThisFrame = (int) (ballsTryingToBeFired) ;
+		for (int i = 1; i <= ballsToFireThisFrame; i++) {
+			bdefFire.position.set(sightBody.getPosition());
+			firedBalls.add(new FiredBall());
+			ballsTryingToBeFired--; // shot a ball
+		}		
+	}
+	private void updateFiredBalls() {
+		for (int i = 0; i < firedBalls.size; i++) {
+			firedBalls.get(i).update();
+			if (firedBalls.get(i).isDead) firedBalls.removeIndex(i);
+		}
+	}
+	
+	private class FiredBall {
+		private Body fireBody;
+		private float deathCountdown = 1.0f; // how long they last in seconds
+		public boolean isDead = false;
+		public FiredBall() {
+			fireBody = world.createBody(bdefFire);
+			fireBody.createFixture(fdefFire).setUserData("fire");
+			Vector2 fireVector = 
+					Misc.vectorComponent(body.getPosition(), sightBody.getPosition(), 8f);
+			fireBody.applyLinearImpulse(fireVector, fireBody.getPosition(), true);
+			// there's a reason that we didn't add recoil :(
+			//body.applyLinearImpulse(-fireVector.x, -fireVector.y, body.getPosition().x, body.getPosition().y, true);
+			if (density() > 1) body.applyLinearImpulse(-fireVector.x *0.07f, -fireVector.y *0.07f, body.getPosition().x, body.getPosition().y, true);
+		}
+		public void update() {
+			if (deathCountdown < 0) {
+				fireBody.destroyFixture(fireBody.getFixtureList().first());
+				world.destroyBody(fireBody);
+				isDead = true;
+			}
+			deathCountdown -= dt;
+		}
+	}
+	
+
+	public void input(int up, int down, int left, int right, int rotateLeft, int rotateRight, int fire) {
+		if (Gdx.input.isKeyPressed(left)) moveLeft();
+		if (Gdx.input.isKeyPressed(right)) moveRight();
+		if (Gdx.input.isKeyJustPressed(up)) jump();
+		if (Gdx.input.isKeyPressed(rotateLeft)) rotateAimLeft();
+		else if (Gdx.input.isKeyPressed(rotateRight)) rotateAimRight();
+		else notRotating();
+		if (Gdx.input.isKeyPressed(fire)) fire();
+	}
+	
+	private void createObjects(float x, float y) {
+
 		bdef = new BodyDef();
 		bdef.type = BodyType.DynamicBody;
 		bdef.position.set(x / ppm, y / ppm);
@@ -126,147 +250,6 @@ public class StreamBeamPlayer {
 		fdefFire.restitution = 0.3f;
 		fdefFire.filter.categoryBits = 1;
 		fdefFire.filter.maskBits = 1;
-			
-	}
-	
-	public void shapeRender(ShapeRenderer shapeRender) {
-		shapeRender.setColor(color);
-		shapeRender.circle(body.getPosition().x*ppm,body.getPosition().y*ppm, 50);
-		shapeRender.setColor(Color.GOLD);
-		for (int i = 0; i < firedBalls.size; i++) {
-			shapeRender.circle(firedBalls.get(i).fireBody.getPosition().x*ppm, firedBalls.get(i).fireBody.getPosition().y*ppm, 16);
-		}
-		shapeRender.setColor(Color.WHITE);
-		shapeRender.circle(sightBody.getPosition().x * ppm, sightBody.getPosition().y * ppm, 20);
-	}
-	
-	public void update(float dt, int groundContacts) {
-		this.dt = dt;
-		updateFiredBalls();
-		
-		if (groundContacts > 0) isGrounded = true;
-		else isGrounded = false;
-		
-	}
-
-	public void moveLeft() {
-		moveHorizontal(-1);
-	}
-	public void moveRight() {
-		moveHorizontal(1);
-	}
-	private void moveHorizontal(int dir) {
-		body.applyForceToCenter(30*dir, 0, true);
-		body.applyTorque(-5 * dir, true);
-	}
-	public void jump() {
-		if (isGrounded) {
-			body.setLinearVelocity(body.getLinearVelocity().x * 0.3f, body.getLinearVelocity().y * 0.3f);
-			body.applyLinearImpulse(new Vector2(0, 16), body.getPosition(), true);
-		}
-		//body.applyForceToCenter(0, 40, true);
-	}
-	
-	public void rotateAimLeft() {
-		rotateAim(-1);
-	}
-	public void rotateAimRight() {
-		rotateAim(1);
-	}
-	private void rotateAim(int dir) {
-		didRotateLastFrame = true;
-		sightRotationAmount -= currentRotationSpeed * dir * dt / 0.016666f;
-		rotatingBody.setTransform(rotatingBody.getPosition(), sightRotationAmount);
-		if (currentRotationSpeed < 0.15f)
-			currentRotationSpeed += 0.011 * dt / 0.0166666f;
-	}
-	public void notRotating() {
-		if (didRotateLastFrame) {
-			didRotateLastFrame = false;
-			currentRotationSpeed = rotationSpeed;
-		}
-	}
-	
-	public void fire() {
-		ballsTryingToBeFired += (dt / firingRate);
-		int ballsToFireThisFrame = (int) (ballsTryingToBeFired) ;
-		for (int i = 1; i <= ballsToFireThisFrame; i++) {
-			bdefFire.position.set(sightBody.getPosition());
-			firedBalls.add(new FiredBall());
-			ballsTryingToBeFired--; // shot a ball
-		}		
-	}
-	private void updateFiredBalls() {
-		for (int i = 0; i < firedBalls.size; i++) {
-			firedBalls.get(i).update();
-			if (firedBalls.get(i).isDead) firedBalls.removeIndex(i);
-		}
-	}
-	
-	private class FiredBall {
-		private Body fireBody;
-		private float deathCountdown = 1.0f; // how long they last in seconds
-		public boolean isDead = false;
-		public FiredBall() {
-			fireBody = world.createBody(bdefFire);
-			fireBody.createFixture(fdefFire).setUserData("fire");
-			Vector2 fireVector = vectorComponent(
-					body.getPosition().x, body.getPosition().y,
-					sightBody.getPosition().x, sightBody.getPosition().y, 
-					8f);
-			fireBody.applyLinearImpulse(fireVector, fireBody.getPosition(), true);
-			// there's a reason that we didn't add recoil :(
-			//body.applyLinearImpulse(-fireVector.x, -fireVector.y, body.getPosition().x, body.getPosition().y, true);
-			if (density() > 1) body.applyLinearImpulse(-fireVector.x *0.07f, -fireVector.y *0.07f, body.getPosition().x, body.getPosition().y, true);
-		}
-		public void update() {
-			if (deathCountdown < 0) {
-				fireBody.destroyFixture(fireBody.getFixtureList().first());
-				world.destroyBody(fireBody);
-				isDead = true;
-			}
-			deathCountdown -= dt;
-		}
-	}
-
-	public Vector2 vectorComponent(float x1, float  y1, float  x2, float y2, float magnitude) {
-		
-		float xRelativeToFirst = x2 - x1;
-		float yRelativeToFirst = y2 - y1;
-		
-		float pythagifiedLine = (xRelativeToFirst * xRelativeToFirst) + (yRelativeToFirst * yRelativeToFirst);
-		
-		pythagifiedLine = (float) Math.sqrt(pythagifiedLine);
-		
-		float percentOfLine = magnitude / pythagifiedLine;
-		
-		float xIterationSpeed = percentOfLine * xRelativeToFirst; 
-		float yIterationSpeed = percentOfLine * yRelativeToFirst;
-		
-		return new Vector2(xIterationSpeed, yIterationSpeed);
-	}
-	
-
-	public void input(int up, int down, int left, int right, int rotateLeft, int rotateRight, int fire) {
-	//public void input(int up, int down, int left, int right, int modifier) {
-		/*if (Gdx.input.isKeyPressed(modifier)) {
-			if (Gdx.input.isKeyPressed(left)) rotateAimLeft();
-			else if (Gdx.input.isKeyPressed(right)) rotateAimRight();
-			else notRotating();
-			if (Gdx.input.isKeyPressed(up)) fire();
-		}
-		else {
-			if (Gdx.input.isKeyPressed(left)) moveLeft();
-			if (Gdx.input.isKeyPressed(right)) moveRight();
-			if (Gdx.input.isKeyJustPressed(up)) jump();
-		}/**/
-		if (Gdx.input.isKeyPressed(left)) moveLeft();
-		if (Gdx.input.isKeyPressed(right)) moveRight();
-		if (Gdx.input.isKeyJustPressed(up)) jump();
-		if (Gdx.input.isKeyPressed(rotateLeft)) rotateAimLeft();
-		else if (Gdx.input.isKeyPressed(rotateRight)) rotateAimRight();
-		else notRotating();
-		if (Gdx.input.isKeyPressed(fire)) fire();/**/
 	}
 	
 }

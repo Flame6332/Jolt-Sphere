@@ -31,7 +31,7 @@ public class MountainClimbingPlayer {
 	@SuppressWarnings("unused")
 	private float dt = 0.01666f;
 	
-	public MountainClimbingPlayer(World world, int x, int y, Color color) {
+	public MountainClimbingPlayer(World world, float x, float y, Color color) {
 		this.world = world;
 		this.color = color;
 		
