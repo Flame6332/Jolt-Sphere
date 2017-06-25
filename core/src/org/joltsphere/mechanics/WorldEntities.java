@@ -201,9 +201,11 @@ public class WorldEntities {
 		fdef.friction = 1;
 		
 		world.createBody(bdef).createFixture(fdef).setUserData("ground");
-		
+		fdef.density = 1;
+		fdef.restitution = 0.5f;
 		bdef.position.y = 1200 / ppm;
 		bdef.type = BodyType.DynamicBody;
+		bdef.bullet = true;
 		EllipseFixture.createEllipseFixtures(world.createBody(bdef), fdef, 135/ppm, 60 /ppm, "");
 		bdef.position.y = 1700 / ppm;
 		EllipseFixture.createEllipseFixtures(world.createBody(bdef), fdef, 135/ppm, 60 /ppm, "");

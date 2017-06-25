@@ -101,7 +101,7 @@ public class StreamBeamPlayer {
 		else if (canDoubleJump) {
 			canDoubleJump = false;
 			body.setLinearVelocity(0, 0);
-			body.applyLinearImpulse(new Vector2(0, 9), body.getPosition(), true);
+			body.applyLinearImpulse(new Vector2(0, 12), body.getPosition(), true);
 		}
 		//body.applyForceToCenter(0, 40, true);
 	}
@@ -158,7 +158,6 @@ public class StreamBeamPlayer {
 		}
 		public void update() {
 			if (deathCountdown < 0) {
-				fireBody.destroyFixture(fireBody.getFixtureList().first());
 				world.destroyBody(fireBody);
 				isDead = true;
 			}

@@ -26,6 +26,7 @@ public class MountainClimbingPlayer {
 	
 	private Color color;
 	private boolean isGrounded = false;
+	private boolean canDouble = false;
 	
 	private float ppm = JoltSphereMain.ppm;
 	@SuppressWarnings("unused")
@@ -70,6 +71,9 @@ public class MountainClimbingPlayer {
 		if (groundContacts > 0) isGrounded = true; 
 		else isGrounded = false;
 		
+		if (isGrounded) {
+			canDouble = true;
+		}
 	}
 
 	public void moveLeft() {
@@ -86,6 +90,11 @@ public class MountainClimbingPlayer {
 		if (isGrounded) {
 			body.setLinearVelocity(body.getLinearVelocity().x * 0.3f, body.getLinearVelocity().y * 0.3f);
 			body.applyLinearImpulse(new Vector2(0, 16), body.getPosition(), true);
+		}
+		if (canDouble) {
+			canDouble = false;
+			body.setLinearVelocity(0, 0);
+			body.applyLinearImpulse(new Vector2(0, 12), body.getPosition(), true);
 		}
 		//body.applyForceToCenter(0, 40, true);
 	}

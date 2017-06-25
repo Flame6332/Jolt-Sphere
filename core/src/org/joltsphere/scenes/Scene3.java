@@ -53,10 +53,13 @@ public class Scene3 implements Screen {
 		
 		game.batch.begin();
 		
-		game.font.draw(game.batch, "" + Gdx.graphics.getFramesPerSecond(), game.width*0.27f, game.height * 0.85f);
+		game.font.draw(game.batch, mountainSpace.points + "boombooms      FPS: " + Gdx.graphics.getFramesPerSecond(), game.width*0.27f, game.height * 0.85f);
 		
 		game.batch.end();
 		
+		float zoom = mountainSpace.getZoom(game.cam.viewportHeight);
+		game.cam.zoom = zoom;
+		game.phys2Dcam.zoom = zoom;
 		game.cam.position.set(mountainSpace.getCameraPostion(), 0);
 		game.phys2Dcam.position.set(mountainSpace.getDebugCameraPostion(), 0);
 		
