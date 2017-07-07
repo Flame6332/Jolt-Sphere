@@ -10,6 +10,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
+import com.badlogic.gdx.physics.box2d.joints.DistanceJointDef;
 import com.badlogic.gdx.physics.box2d.joints.RevoluteJointDef;
 import com.badlogic.gdx.physics.box2d.joints.WeldJointDef;
 import com.badlogic.gdx.utils.Array;
@@ -209,7 +210,7 @@ public class StreamBeamPlayer {
 		sightCircle = new CircleShape();
 		sightCircle.setRadius(20 / ppm);
 		fdef.friction = 0f;
-		fdef.density = 0.001f;
+		fdef.density = 0.01f;
 		fdef.restitution = 0f;
 		fdef.filter.categoryBits = 2;
 		fdef.filter.maskBits = 1;
@@ -219,7 +220,7 @@ public class StreamBeamPlayer {
 		sightFixture = sightBody.createFixture(fdef);
 		sightFixture.setUserData("sight");
 		
-		WeldJointDef wdef = new WeldJointDef();
+		RevoluteJointDef wdef = new RevoluteJointDef();
 		wdef.bodyA = rotatingBody;
 		wdef.bodyB = sightBody;
 		wdef.localAnchorA.set(50 / ppm, 0);
