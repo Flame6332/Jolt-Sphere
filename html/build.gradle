@@ -7,8 +7,8 @@ gwt {
     minHeapSize="1G"
 
     src = files(file("src/")) // Needs to be in front of "modules" below.
-    modules 'org.joltshpere.main.GdxDefinition'
-    devModules 'org.joltshpere.main.GdxDefinitionSuperdev'
+    modules 'org.joltsphere.main.GdxDefinition'
+    devModules 'org.joltsphere.main.GdxDefinitionSuperdev'
     project.webAppDirName = 'webapp'
 
     compiler {
@@ -22,6 +22,7 @@ task draftRun(type: JettyRunWar) {
     dependsOn.remove('war')
     webApp=draftWar.archivePath
     daemon=true
+    httpPort=8888
 }
 
 task superDev(type: de.richsource.gradle.plugins.gwt.GwtSuperDev) {
