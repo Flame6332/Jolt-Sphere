@@ -83,6 +83,7 @@ public class Scene5 implements Screen {
 	
 	private void update(float dt) {
 		streamBeam.input(Keys.P, Keys.P, Keys.P, Keys.P, Keys.LEFT, Keys.RIGHT, Keys.UP);
+		streamBeam.reverseMovement(Keys.W, Keys.A, Keys.D);
 		otherPlayer.input(Keys.W, Keys.S, Keys.A, Keys.D, Keys.SHIFT_LEFT, true);
 	}
 	
