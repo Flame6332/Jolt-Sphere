@@ -41,6 +41,9 @@ public class StreamBeamPlayer {
 	private float ballsTryingToBeFired = 0;
 	private int firedBallCount = 0;
 	public Array<Integer> firedBallsToBeRemoved;
+	private boolean canFire = true;
+	private float energyLevel = 0;
+	private float maxEnergy = 100; 
 	
 	private float sightRotationAmount = 0;
 	private boolean didRotateLastFrame = false;
@@ -68,6 +71,12 @@ public class StreamBeamPlayer {
 		}
 		shapeRender.setColor(Color.WHITE);
 		shapeRender.circle(sightBody.getPosition().x * ppm, sightBody.getPosition().y * ppm, 20);
+		
+		shapeRender.setColor(Color.WHITE);
+		shapeRender.rect(0, body.getPosition().y*ppm, maxEnergy*5+30, 100);
+		
+		shapeRender.setColor(Color.YELLOW);
+		shapeRender.rect(30, body.getPosition().y*ppm+15, energyLevel*5, 70);
 	}
 	
 	public void update(float dt, int groundContacts) {
@@ -79,6 +88,7 @@ public class StreamBeamPlayer {
 		
 		if (isGrounded) canDoubleJump = true;
 		
+		if (energyLevel > 0) energyLevel -= 0.125f;
 	}
 
 	public void moveLeft() {
@@ -125,12 +135,17 @@ public class StreamBeamPlayer {
 	}
 	
 	public void fire() {
-		ballsTryingToBeFired += (dt / firingRate);
-		int ballsToFireThisFrame = (int) (ballsTryingToBeFired) ;
-		for (int i = 1; i <= ballsToFireThisFrame; i++) {
-			bdefFire.position.set(sightBody.getPosition());
-			firedBalls.add(new FiredBall());
-			ballsTryingToBeFired--; // shot a ball
+		if (energyLevel >= maxEnergy) canFire = false;
+		else canFire = true;
+		if (canFire) {
+			energyLevel += 1;
+			ballsTryingToBeFired += (dt / firingRate);
+			int ballsToFireThisFrame = (int) (ballsTryingToBeFired) ;
+			for (int i = 1; i <= ballsToFireThisFrame; i++) {
+				bdefFire.position.set(sightBody.getPosition());
+				firedBalls.add(new FiredBall());
+				ballsTryingToBeFired--; // shot a ball
+			}
 		}		
 	}
 	private void updateFiredBalls() {
