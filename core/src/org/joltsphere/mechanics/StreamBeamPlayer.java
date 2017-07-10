@@ -2,6 +2,7 @@ package org.joltsphere.mechanics;
 
 import org.joltsphere.main.JoltSphereMain;
 import org.joltsphere.misc.Misc;
+import org.joltsphere.misc.ObjectData;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
@@ -15,7 +16,6 @@ import com.badlogic.gdx.physics.box2d.joints.RevoluteJointDef;
 import com.badlogic.gdx.physics.box2d.joints.WeldJointDef;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.physics.box2d.CircleShape;
-import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.World;
 
@@ -26,10 +26,6 @@ public class StreamBeamPlayer {
 	private Body sightBody;
 	private Body rotatingBody;
 	private Array<FiredBall> firedBalls;
-	private Fixture fixture;
-	private Fixture sightFixture;
-	@SuppressWarnings("unused")
-	private Fixture rotatingFixture;
 	private BodyDef bdef;
 	private BodyDef bdefFire;
 	private FixtureDef fdef;
@@ -45,6 +41,8 @@ public class StreamBeamPlayer {
 	
 	private float firingRate = 0.016667f; // the smaller the faster
 	private float ballsTryingToBeFired = 0;
+	private int firedBallCount = 0;
+	public Array<Integer> firedBallsToBeRemoved;
 	
 	private float sightRotationAmount = 0;
 	private boolean didRotateLastFrame = false;
@@ -59,6 +57,7 @@ public class StreamBeamPlayer {
 		this.color = color;
 		
 		createObjects(x, y);
+		firedBallsToBeRemoved = new Array<Integer>();
 			
 	}
 	
@@ -147,9 +146,13 @@ public class StreamBeamPlayer {
 		private Body fireBody;
 		private float deathCountdown = 1.0f; // how long they last in seconds
 		public boolean isDead = false;
+		private int count;
 		public FiredBall() {
 			fireBody = world.createBody(bdefFire);
-			fireBody.createFixture(fdefFire).setUserData("fire");
+			firedBallCount++;
+			count = firedBallCount;
+			fireBody.setUserData(new ObjectData(firedBallCount, "fire"));
+			fireBody.createFixture(fdefFire);
 			Vector2 fireVector = 
 					Misc.vectorComponent(body.getPosition(), sightBody.getPosition(), 8f);
 			fireBody.applyLinearImpulse(fireVector, fireBody.getPosition(), true);
@@ -158,14 +161,23 @@ public class StreamBeamPlayer {
 			if (density() > 1) body.applyLinearImpulse(-fireVector.x *0.07f, -fireVector.y *0.07f, body.getPosition().x, body.getPosition().y, true);
 		}
 		public void update() {
-			if (deathCountdown < 0) {
+			boolean shouldDestroy = false;
+			for (Integer i : firedBallsToBeRemoved) {
+				if (i.intValue() == count) shouldDestroy = true;
+				//System.out.println(i + " " + ((ObjectData)fireBody.getUserData()).count);
+			}
+			if (deathCountdown < 0 || shouldDestroy) {
+				firedBallsToBeRemoved.removeValue(count, true);
 				world.destroyBody(fireBody);
 				isDead = true;
 			}
+			/*if (shouldDestroy) {
+				firedBallsToBeRemoved.removeValue(count, true);
+				if (fireBody.getFixtureList().size > 0) fireBody.getFixtureList().first().setSensor(true);
+			}*/
 			deathCountdown -= dt;
 		}
 	}
-	
 
 	public void input(int up, int down, int left, int right, int rotateLeft, int rotateRight, int fire) {
 		if (Gdx.input.isKeyPressed(left)) moveLeft();
@@ -187,6 +199,7 @@ public class StreamBeamPlayer {
 		bdef.linearDamping = 0.2f;
 		bdef.angularDamping = 0.5f;
 		body = world.createBody(bdef);
+		body.setUserData(new ObjectData("streamBeam"));
 		fdef = new FixtureDef();
 		circle = new CircleShape();
 		circle.setRadius(50 / ppm);
@@ -196,8 +209,7 @@ public class StreamBeamPlayer {
 		fdef.restitution = 0;
 		fdef.filter.categoryBits = 1;
 		fdef.filter.maskBits = 1;
-		fixture = body.createFixture(fdef);
-		fixture.setUserData("streamBeam");
+		body.createFixture(fdef);
 		
 		bdef = new BodyDef();
 		bdef.type = BodyType.DynamicBody;
@@ -215,10 +227,9 @@ public class StreamBeamPlayer {
 		fdef.filter.categoryBits = 2;
 		fdef.filter.maskBits = 1;
 		fdef.shape = circle;
-		rotatingFixture = rotatingBody.createFixture(fdef);
+		rotatingBody.createFixture(fdef);
 		fdef.shape = sightCircle;
-		sightFixture = sightBody.createFixture(fdef);
-		sightFixture.setUserData("sight");
+		sightBody.createFixture(fdef);
 		
 		RevoluteJointDef wdef = new RevoluteJointDef();
 		wdef.bodyA = rotatingBody;

@@ -1,6 +1,7 @@
 package org.joltsphere.mechanics;
 
 import org.joltsphere.main.JoltSphereMain;
+import org.joltsphere.misc.ObjectData;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
@@ -10,7 +11,6 @@ import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 import com.badlogic.gdx.physics.box2d.CircleShape;
-import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.World;
 
@@ -19,7 +19,6 @@ public class MountainClimbingPlayer {
 	@SuppressWarnings("unused")
 	private World world;
 	public Body body;
-	private Fixture fixture;
 	private BodyDef bdef;
 	private FixtureDef fdef;
 	private CircleShape circle;
@@ -44,6 +43,7 @@ public class MountainClimbingPlayer {
 		bdef.linearDamping = 0.2f;
 		bdef.angularDamping = 0.5f;
 		body = world.createBody(bdef);
+		body.setUserData(new ObjectData("mountainClimber"));
 		fdef = new FixtureDef();
 		circle = new CircleShape();
 		circle.setRadius(50 / ppm);
@@ -51,12 +51,8 @@ public class MountainClimbingPlayer {
 		fdef.friction = 0.1f;
 		fdef.density = 10;
 		fdef.restitution = 0f;
-		fdef.filter.categoryBits = 1;
-		fdef.filter.maskBits = 1;
-		fixture = body.createFixture(fdef);
-		fixture.setUserData("mountainClimber");
+		body.createFixture(fdef);
 		
-				
 	}
 	
 	public void shapeRender(ShapeRenderer shapeRender) {
@@ -101,24 +97,6 @@ public class MountainClimbingPlayer {
 	public void fly() {
 		body.applyForceToCenter(new Vector2(0, 60), true);
 	}
-
-	public Vector2 vectorComponent(float x1, float  y1, float  x2, float y2, float magnitude) {
-		
-		float xRelativeToFirst = x2 - x1;
-		float yRelativeToFirst = y2 - y1;
-		
-		float pythagifiedLine = (xRelativeToFirst * xRelativeToFirst) + (yRelativeToFirst * yRelativeToFirst);
-		
-		pythagifiedLine = (float) Math.sqrt(pythagifiedLine);
-		
-		float percentOfLine = magnitude / pythagifiedLine;
-		
-		float xIterationSpeed = percentOfLine * xRelativeToFirst; 
-		float yIterationSpeed = percentOfLine * yRelativeToFirst;
-		
-		return new Vector2(xIterationSpeed, yIterationSpeed);
-	}
-	
 
 	public void input(int up, int down, int left, int right, int modifier, boolean fly) {	
 		if (Gdx.input.isKeyPressed(left)) moveLeft();

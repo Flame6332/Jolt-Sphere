@@ -5,6 +5,7 @@ import org.joltsphere.mechanics.MountainClimbingPlayer;
 import org.joltsphere.mechanics.StreamBeamPlayer;
 import org.joltsphere.misc.EllipseFixture;
 import org.joltsphere.misc.Misc;
+import org.joltsphere.misc.ObjectData;
 
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.graphics.Color;
@@ -15,7 +16,6 @@ import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.Contact;
 import com.badlogic.gdx.physics.box2d.ContactImpulse;
 import com.badlogic.gdx.physics.box2d.ContactListener;
-import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.Manifold;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
@@ -63,12 +63,19 @@ public class MountainSpace {
 	public void shapeRender(ShapeRenderer shapeRender) {
 		streamBeam.shapeRender(shapeRender);
 		mountainClimber.shapeRender(shapeRender);
+		
+		//shapeRender.setColor((float) Math.sin(risingPlatformHeight), (float) Math.cos(risingPlatformHeight), (float) Math.tan(risingPlatformHeight), 1);
+		//shapeRender.rect(0, 0, width, risingPlatformHeight*ppm +20);
+		
 		shapeRender.setColor(193/255f, 138/255f, 0, 0.24f);
+		//shapeRender.setColor(Color.RAINBOW);
+		shapeRender.rect(0, 0, width, risingPlatformHeight*ppm +20);
+		/*shapeRender.setColor(193/255f, 138/255f, 0, 0.24f);
 		shapeRender.rect(0, 0, width, risingPlatformHeight*ppm +20);
 		shapeRender.setColor(Color.BROWN);
 		for (int i = 1; i <= 7; i++) {
 			shapeRender.ellipse(Misc.random(0, 100) +i*(width / 8)  + 50, risingPlatformHeight*ppm, Misc.random(100, 200), Misc.random(30, 90));
-		}
+		}*/
 	}
 	public void update(float dt, float viewHalfWidth, float viewHalfHeight) {
 		risingPlatformHeight = risingPlatform.getHeight();
@@ -105,27 +112,39 @@ public class MountainSpace {
 	}
 	
 	private class ContLis implements ContactListener {
-		private Fixture fa, fb;
+		private Body bA, bB;
 		public void beginContact(Contact contact) {	
-			fa = contact.getFixtureA();	fb = contact.getFixtureB();
+			bA = contact.getFixtureA().getBody();	bB = contact.getFixtureB().getBody();
 			if (isContacting("mountainClimber", "ground")) mountainClimberGroundContacts++;
 			if (isContacting("streamBeam", "ground")) streamBeamGroundContacts++;
 			if (isContacting("deathPlatform", "streamBeam"));
 			if (isContacting("deathPlatform", "mountainClimber"));
 			if (isContacting("fire", "mountainClimber")) {
+				if (((ObjectData) bA.getUserData()).string == "fire") streamBeam.firedBallsToBeRemoved.add(((ObjectData) bA.getUserData()).count);
+				else streamBeam.firedBallsToBeRemoved.add(((ObjectData) bB.getUserData()).count);
 				points++;
 			}
 		}
 		public void endContact(Contact contact) {
-			fa = contact.getFixtureA(); fb = contact.getFixtureB();
+			bA = contact.getFixtureA().getBody(); bB = contact.getFixtureB().getBody();
 			if (isContacting("mountainClimber", "ground")) mountainClimberGroundContacts--;
-			if (isContacting("streamBeam", "ground")) streamBeamGroundContacts--;	
+			if (isContacting("streamBeam", "ground")) streamBeamGroundContacts--;
 		}
 		public void preSolve(Contact contact, Manifold oldManifold) {}
 		public void postSolve(Contact contact, ContactImpulse impulse) {}
-		private boolean isContacting(String f1, String f2) {
-			if (fa.getUserData() == f1 && fb.getUserData() == f2) return true;
-			else if (fa.getUserData() == f2 && fb.getUserData() == f1) return true;
+		private boolean isContacting(String string1, String string2) {
+			String dat1, dat2;
+			if (bA.getUserData() instanceof ObjectData) {
+				dat1 = ((ObjectData) bA.getUserData()).string;
+			}
+			else dat1 = (String) bA.getUserData();
+			if (bB.getUserData() instanceof ObjectData) {
+				dat2 = ((ObjectData) bB.getUserData()).string;
+			}
+			else dat2 = (String) bB.getUserData();
+			
+			if (dat1 == string1 && dat2 == string2) return true;
+			else if (dat1 == string2 && dat2==string1) return true;
 			else return false;
 		}
 	}
@@ -162,8 +181,9 @@ public class MountainSpace {
 			bdef.type = BodyType.StaticBody;
 			bdef.position.set(Misc.random() * mountainWidth / ppm, highestPlatform / ppm);
 			body = world.createBody(bdef);
+			body.setUserData("ground");
 			float size = 400f;
-			EllipseFixture.createEllipseFixtures(body, 1, 0, 1, Misc.random(0.1f, 1f) * size /ppm, Misc.random(0.1f, 1f) * size /ppm, "ground");
+			EllipseFixture.createEllipseFixtures(body, 1, 0, 1, Misc.random(0.1f, 1f) * size /ppm, Misc.random(0.1f, 1f) * size /ppm, null);
 		}
 		public boolean isDead() {
 			if (body.getPosition().y < risingPlatformHeight) {

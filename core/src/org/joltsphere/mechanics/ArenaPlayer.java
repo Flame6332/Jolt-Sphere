@@ -59,7 +59,7 @@ public class ArenaPlayer {
 	public float smashRestitution = 0; // restitution of smash object
 	public float smashDensity = 80f;
 	public float smashJumpRestitution = 0.6f; 
-	public float smashJumpDensity = 750f;
+	public float smashJumpDensity = 375f / 4f;
 	
 	public float energyTimerSpeed = 1/50f;
 	public float energyTimer = 1;
@@ -297,7 +297,7 @@ public class ArenaPlayer {
 		smashJumpPeriod = smashJumpLength;
 		body.setAngularVelocity(body.getAngularVelocity() * 0.3f); // rotational speed decreased 30%
 		body.setLinearVelocity(body.getLinearVelocity().x * 0.3f, body.getLinearVelocity().y * 0.1f); // velocities decreased 30% and 10%
-		body.applyLinearImpulse(new Vector2(0, (2000000f * 0.0166666f) / 2f), body.getPosition(), true);
+		body.applyLinearImpulse(new Vector2(0, (2000000f * 0.0166666f) / 16f), body.getPosition(), true);
 	}
 	private void updateSmashJump(float dt) {
 		if (smashJumpPeriod > 0) { // if you can still smash jump
