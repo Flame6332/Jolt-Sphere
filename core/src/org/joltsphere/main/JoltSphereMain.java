@@ -1,5 +1,6 @@
 package org.joltsphere.main;
 
+import org.joltsphere.misc.RandomFunctions;
 import org.joltsphere.scenes.Scene1;
 import org.joltsphere.scenes.Scene2;
 import org.joltsphere.scenes.Scene3;
@@ -73,6 +74,8 @@ public class JoltSphereMain extends Game {
 		
 		batch = new SpriteBatch();
 		shapeRender = new ShapeRenderer();
+		
+		System.out.println("My Kotlin Test: add(1,2) returns: " + RandomFunctions.add(1,2));
 		
 	}
 
