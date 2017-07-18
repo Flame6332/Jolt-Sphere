@@ -75,7 +75,7 @@ public class JoltSphereMain extends Game {
 		batch = new SpriteBatch();
 		shapeRender = new ShapeRenderer();
 		
-		System.out.println("My Kotlin Test: add(1,2) returns: " + RandomFunctions.add(1,2));
+		System.out.println("My Kotlin Test > add(1,2) returns: " + RandomFunctions.add(1,2));
 		
 	}
 
