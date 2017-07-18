@@ -42,7 +42,7 @@ public class ArenaSpace {
 			players.get(i).shapeRender(shapeRender);
 		}
 		
-		for (int i = 1; i <= players.first().paint.size; i++) { // all paint trails the same
+		for (int i = 0; i < players.first().paint.size; i++) { // all paint trails the same
 			for (int j = 0; j < players.size; j++) {
 				players.get(j).renderPaint(shapeRender, i);
 			}		

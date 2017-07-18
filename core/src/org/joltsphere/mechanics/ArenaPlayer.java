@@ -80,7 +80,7 @@ public class ArenaPlayer {
 	public float smashLength = 60;
 	public float smashTimer = smashLength;
 	
-	private float magnifyLength = 60;
+	private float magnifyLength = 120;
 	private float magnifyTimer = magnifyLength;
 	
 	public float attackCooldownLength = 250;
@@ -145,7 +145,7 @@ public class ArenaPlayer {
 		
 		updateEnergy();
 		
-		//updatePaint();
+		updatePaint();
 	}
 
 	

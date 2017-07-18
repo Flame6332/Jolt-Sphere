@@ -29,13 +29,6 @@ public class Scene1 implements Screen {
 	
 	Vector2 worldCenter;
 	
-	/*
-	 * 
-	 * `bob = {2, 7, 29, 39}
-	 *  print(bob[0]) 
-	 * 
-	 */
-	
 	float timer = 0;
 	boolean isTimerEnabled = true;
 	float ppm = JoltSphereMain.ppm;
