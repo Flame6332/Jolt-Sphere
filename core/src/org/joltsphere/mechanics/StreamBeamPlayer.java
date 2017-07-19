@@ -168,6 +168,7 @@ public class StreamBeamPlayer {
 			fireBody.createFixture(fdefFire);
 			Vector2 fireVector = 
 					Misc.vectorComponent(body.getPosition(), sightBody.getPosition(), 8f);
+
 			fireBody.applyLinearImpulse(fireVector, fireBody.getPosition(), true);
 			// there's a reason that we didn't add recoil :(
 			//body.applyLinearImpulse(-fireVector.x, -fireVector.y, body.getPosition().x, body.getPosition().y, true);
