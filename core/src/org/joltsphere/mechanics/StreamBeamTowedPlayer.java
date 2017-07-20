@@ -12,13 +12,13 @@ public class StreamBeamTowedPlayer extends StreamBeamPlayer {
 	public StreamBeamTowedPlayer(World world, int x, int y, Color color) {
 		super(world, x, y, color);
 		
-		body.setLinearDamping(100000);
+		getBody().setLinearDamping(100000);
 	}
 	
 	public void reverseMovement(int up, int left, int right) {
 		int x = 15;
-		if (Gdx.input.isKeyPressed(up)) body.applyForceToCenter(0, -10, true);
-		if (Gdx.input.isKeyPressed(left)) body.applyForceToCenter(x, 0, true);
-		if (Gdx.input.isKeyPressed(right)) body.applyForceToCenter(-x, 0, true);
+		if (Gdx.input.isKeyPressed(up)) getBody().applyForceToCenter(0, -10, true);
+		if (Gdx.input.isKeyPressed(left)) getBody().applyForceToCenter(x, 0, true);
+		if (Gdx.input.isKeyPressed(right)) getBody().applyForceToCenter(-x, 0, true);
 	}
 }

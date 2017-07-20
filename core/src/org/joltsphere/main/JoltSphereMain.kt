@@ -43,9 +43,9 @@ open class JoltSphereMain : Game() {
     lateinit var phys2Dview: Viewport
 
     lateinit var uiView: Viewport
-    var batch: SpriteBatch = SpriteBatch()
+    lateinit var batch: SpriteBatch
 
-    var shapeRender: ShapeRenderer = ShapeRenderer()
+    lateinit var shapeRender: ShapeRenderer
 
     override fun create() {
 
@@ -60,7 +60,10 @@ open class JoltSphereMain : Game() {
         uiView = ExtendViewport(width, height, uiCam)
         phys2Dview = ExtendViewport(width / ppm, height / ppm, phys2DCam)
 
+        shapeRender = ShapeRenderer()
+
         this.setScreen(Scene1(this))
+        batch = SpriteBatch()
 
         Gdx.graphics.setVSync(true)
         setFPSLimit(60)
