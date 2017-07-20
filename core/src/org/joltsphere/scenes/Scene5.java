@@ -50,7 +50,7 @@ public class Scene5 implements Screen {
 		contLis = new StreamBeamContactListener();
 		
 		ent.createFlatPlatform(world);
-		world = ent.world;
+		world = ent.getWorld();
 		world.setContactListener(contLis);
 		
 		try {
@@ -105,7 +105,7 @@ public class Scene5 implements Screen {
 			
 		game.shapeRender.end();
 		
-		debugRender.render(world, game.phys2Dcam.combined);
+		debugRender.render(world, game.phys2DCam.combined);
 		
 		game.batch.begin();
 		
@@ -115,13 +115,13 @@ public class Scene5 implements Screen {
 			
 		game.cam.position.x = otherPlayer.body.getPosition().x * ppm;
 		game.cam.position.y = otherPlayer.body.getPosition().y * ppm;
-		game.phys2Dcam.position.x = otherPlayer.body.getPosition().x;
-		game.phys2Dcam.position.y = otherPlayer.body.getPosition().y;
+		game.phys2DCam.position.x = otherPlayer.body.getPosition().x;
+		game.phys2DCam.position.y = otherPlayer.body.getPosition().y;
 		game.cam.zoom = 1;
-		game.phys2Dcam.zoom = 1;
+		game.phys2DCam.zoom = 1;
 		
 		game.cam.update();
-		game.phys2Dcam.update();
+		game.phys2DCam.update();
 		
 	}
 	

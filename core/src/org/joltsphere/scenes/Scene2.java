@@ -71,7 +71,7 @@ public class Scene2 implements Screen {
 			
 		game.shapeRender.end();
 		
-		debugRender.render(world, game.phys2Dcam.combined);
+		debugRender.render(world, game.phys2DCam.combined);
 		
 		game.batch.begin();
 		
@@ -80,7 +80,7 @@ public class Scene2 implements Screen {
 		game.batch.end();
 			
 		game.cam.update();
-		game.phys2Dcam.update();
+		game.phys2DCam.update();
 		
 	}
 	

@@ -42,7 +42,7 @@ public class Scene4 implements Screen {
 		
 		ent.createFlatPlatform(world);
 		ent.createPlatform1(world);
-		world = ent.world;
+		world = ent.getWorld();
 		world.setContactListener(contLis);
 		
 		streamBeam = new StreamBeamPlayer(world, 200, 200, Color.RED);
@@ -73,7 +73,7 @@ public class Scene4 implements Screen {
 			
 		game.shapeRender.end();
 		
-		debugRender.render(world, game.phys2Dcam.combined);
+		debugRender.render(world, game.phys2DCam.combined);
 		
 		game.batch.begin();
 		
@@ -82,7 +82,7 @@ public class Scene4 implements Screen {
 		game.batch.end();
 			
 		game.cam.update();
-		game.phys2Dcam.update();
+		game.phys2DCam.update();
 		
 	}
 	

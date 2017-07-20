@@ -49,7 +49,7 @@ public class Scene3 implements Screen {
 		
 		game.shapeRender.end();
 		
-		debugRender.render(world, game.phys2Dcam.combined);
+		debugRender.render(world, game.phys2DCam.combined);
 		
 		game.batch.begin();
 		
@@ -59,12 +59,12 @@ public class Scene3 implements Screen {
 		
 		float zoom = mountainSpace.getZoom(game.cam.viewportHeight);
 		game.cam.zoom = zoom;
-		game.phys2Dcam.zoom = zoom;
+		game.phys2DCam.zoom = zoom;
 		game.cam.position.set(mountainSpace.getCameraPostion(), 0);
-		game.phys2Dcam.position.set(mountainSpace.getDebugCameraPostion(), 0);
+		game.phys2DCam.position.set(mountainSpace.getDebugCameraPostion(), 0);
 		
 		game.cam.update();
-		game.phys2Dcam.update();
+		game.phys2DCam.update();
 		
 	}
 	
