@@ -106,8 +106,8 @@ class MountainSpace(private val world: World) {
     }
 
     private inner class ContLis : ContactListener {
-        private var bA: Body? = null
-        private var bB: Body? = null
+        private lateinit var bA: Body
+        private lateinit var bB: Body
         override fun beginContact(contact: Contact) {
             bA = contact.fixtureA.body
             bB = contact.fixtureB.body
@@ -116,10 +116,10 @@ class MountainSpace(private val world: World) {
             if (isContacting("deathPlatform", "streamBeam"))
                 if (isContacting("deathPlatform", "mountainClimber"))
                     if (isContacting("fire", "mountainClimber")) {
-                        if ((bA!!.userData as ObjectData).string === "fire")
-                            streamBeam.firedBallsToBeRemoved.add((bA!!.userData as ObjectData).count)
+                        if ((bA.userData as ObjectData).string === "fire")
+                            streamBeam.firedBallsToBeRemoved.add((bA.userData as ObjectData).count)
                         else
-                            streamBeam.firedBallsToBeRemoved.add((bB!!.userData as ObjectData).count)
+                            streamBeam.firedBallsToBeRemoved.add((bB.userData as ObjectData).count)
                         points++
                     }
         }
@@ -134,23 +134,26 @@ class MountainSpace(private val world: World) {
         override fun preSolve(contact: Contact, oldManifold: Manifold) {}
         override fun postSolve(contact: Contact, impulse: ContactImpulse) {}
         private fun isContacting(string1: String, string2: String): Boolean {
-            val dat1: String
-            val dat2: String
-            if (bA!!.userData is ObjectData) {
-                dat1 = (bA!!.userData as ObjectData).string
-            } else
-                dat1 = bA!!.userData as String
-            if (bB!!.userData is ObjectData) {
-                dat2 = (bB!!.userData as ObjectData).string
-            } else
-                dat2 = bB!!.userData as String
+            if (bA.userData != null && bB.userData != null) {
+                var dat1: String = ""
+                var dat2: String = ""
+                if (bA.userData is ObjectData)
+                    dat1 = (bA.userData as ObjectData).string
+                else if (bA.userData is String)
+                    dat1 = bA.userData as String
+                if (bB.userData is ObjectData)
+                    dat2 = (bB.userData as ObjectData).string
+                else if (bA.userData is String)
+                    dat2 = bB.userData as String
 
-            if (dat1 === string1 && dat2 === string2)
-                return true
-            else if (dat1 === string2 && dat2 === string1)
-                return true
-            else
-                return false
+                if (dat1 === string1 && dat2 === string2)
+                    return true
+                else if (dat1 === string2 && dat2 === string1)
+                    return true
+                else
+                    return false
+            }
+            else return false
         }
     }
 
@@ -197,7 +200,7 @@ class MountainSpace(private val world: World) {
             body = world.createBody(bdef)
             body.userData = "ground"
             val size = 400f
-            EllipseFixture.createEllipseFixtures(body, 1f, 0f, 1f, Misc.random(0.1f, 1f) * size / ppm, Misc.random(0.1f, 1f) * size / ppm, null)
+            EllipseFixture.createEllipseFixtures(body, 1f, 0f, 1f, Misc.random(0.1f, 1f) * size / ppm, Misc.random(0.1f, 1f) * size / ppm, "")
         }
 
         val isDead: Boolean

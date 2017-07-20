@@ -155,9 +155,9 @@ open class StreamBeamPlayer(private val world: World, x: Float, y: Float, privat
     }
 
     private fun updateFiredBalls() {
-        for (i in 0..firedBalls.size - 1) {
-            firedBalls.get(i).update()
-            if (firedBalls.get(i).isDead) firedBalls.removeIndex(i)
+        for (firedBall in firedBalls) {
+            firedBall.update()
+            if (firedBall.isDead) firedBalls.removeValue(firedBall, true)
         }
     }
 
