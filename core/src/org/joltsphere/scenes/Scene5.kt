@@ -55,8 +55,8 @@ class Scene5(internal val game: JoltSphereMain) : Screen {
         mapHeight = mapProp.get("height", Int::class.java) as Int * 320
         MapBodyBuilder.buildShapes(map, ppm, world, "terrain")
 
-        streamBeam = StreamBeamTowedPlayer(world, 450f, (mapHeight / 1.8f).toFloat(), Color.RED)
-        otherPlayer = MountainClimbingPlayer(world, 500f, (mapHeight / 1.8f).toInt().toFloat(), Color.BLUE)
+        streamBeam = StreamBeamTowedPlayer(world, 450f, (mapHeight / 1.8f), Color.RED)
+        otherPlayer = MountainClimbingPlayer(world, 500f, (mapHeight / 1.8f), Color.BLUE)
 
         val dDef = DistanceJointDef()
         dDef.collideConnected = true
