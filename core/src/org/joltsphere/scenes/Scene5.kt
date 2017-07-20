@@ -23,10 +23,10 @@ import com.badlogic.gdx.physics.box2d.joints.DistanceJointDef
 
 class Scene5(internal val game: JoltSphereMain) : Screen {
 
-    internal var world: World
-    internal var debugRender: Box2DDebugRenderer
-    internal var contLis: StreamBeamContactListener
-    internal var ent: WorldEntities
+    internal var world: World = World(Vector2(0f, -9.8f), false) //ignore inactive objects false
+    internal var debugRender: Box2DDebugRenderer = Box2DDebugRenderer()
+    internal var contLis: StreamBeamContactListener = StreamBeamContactListener()
+    internal var ent: WorldEntities = WorldEntities()
 
     internal var streamBeam: StreamBeamTowedPlayer
     internal var otherPlayer: MountainClimbingPlayer
@@ -39,13 +39,6 @@ class Scene5(internal val game: JoltSphereMain) : Screen {
     internal var ppm = JoltSphereMain.ppm
 
     init {
-
-        world = World(Vector2(0f, -9.8f), false) //ignore inactive objects false
-
-        debugRender = Box2DDebugRenderer()
-
-        ent = WorldEntities()
-        contLis = StreamBeamContactListener()
 
         ent.createFlatPlatform(world)
         world = ent.world
