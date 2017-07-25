@@ -4,11 +4,7 @@ import org.joltsphere.main.JoltSphereMain
 import org.joltsphere.misc.EllipseFixture
 
 import com.badlogic.gdx.math.Vector2
-import com.badlogic.gdx.physics.box2d.BodyDef
-import com.badlogic.gdx.physics.box2d.ChainShape
-import com.badlogic.gdx.physics.box2d.CircleShape
-import com.badlogic.gdx.physics.box2d.FixtureDef
-import com.badlogic.gdx.physics.box2d.World
+import com.badlogic.gdx.physics.box2d.*
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType
 
 class WorldEntities {
@@ -63,8 +59,9 @@ class WorldEntities {
         fdef.friction = 1f
         fdef.restitution = 0f
 
-        world.createBody(bdef).createFixture(fdef).userData = "ground"
-
+        val b = world.createBody(bdef)
+        b.createFixture(fdef)
+        b.userData = "ground"
         chain.dispose()
 
     }
@@ -197,7 +194,9 @@ class WorldEntities {
         fdef.shape = chain
         fdef.friction = 1f
 
-        world.createBody(bdef).createFixture(fdef).userData = "ground"
+        val b = world.createBody(bdef)
+                b.createFixture(fdef)
+                b.userData = "ground"
 
         chain.dispose()
 

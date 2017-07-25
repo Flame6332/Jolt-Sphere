@@ -3,21 +3,20 @@ package org.joltsphere.misc
 import com.badlogic.gdx.math.Vector2
 
 class Misc {
-
     companion object {
 
         /** Just a float version of Math.random()  */
-        @JvmStatic fun random(): Float {
+        fun random(): Float {
             return Math.random().toFloat()
         }
 
         /** Returns a random value between the min and max  */
-        @JvmStatic fun random(min: Float, max: Float): Float {
+        fun random(min: Float, max: Float): Float {
             return (max - min) * Math.random().toFloat() + min
         }
 
         /** Returns a random value that has been rounded to an integer  */
-        @JvmStatic fun randomInt(min: Int, max: Int): Int {
+        fun randomInt(min: Int, max: Int): Int {
             return Math.round(random(min.toFloat(), max.toFloat()))
         }
 
@@ -29,7 +28,7 @@ class Misc {
          * @param directionY the y position that the vector is directed towards
          * @param magnitude the magnitude of the given vector
          */
-        @JvmStatic fun vectorComponent(originX: Float, originY: Float, directionX: Float, directionY: Float, magnitude: Float): Vector2 {
+        fun vectorComponent(originX: Float, originY: Float, directionX: Float, directionY: Float, magnitude: Float): Vector2 {
             val x1 = originX
             val y1 = originY
             val x2 = directionX
@@ -56,10 +55,26 @@ class Misc {
          * @param directionalPoint the point that the vector is directed towards
          * @param magnitude the magnitude of the vector
          */
-        @JvmStatic fun vectorComponent(originPoint: Vector2, directionalPoint: Vector2, magnitude: Float): Vector2 {
+        fun vectorComponent(originPoint: Vector2, directionalPoint: Vector2, magnitude: Float): Vector2 {
             return vectorComponent(originPoint.x, originPoint.y, directionalPoint.x, directionalPoint.y, magnitude)
         }
 
-    }
 
+    }
+}
+
+class LastFrame {
+    private var boolean = true
+    /** Execute this function every time the action occurs */
+    fun occured() {
+        if (!boolean) boolean = true // optimizations lol, could of just set it to true and called it a day
+    }
+    /** Returns true if the action just ended, note that this will be false if called twice in a row */
+    fun justEnded() : Boolean {
+        if (boolean) {
+            boolean = false
+            return true
+        }
+        else return false
+    }
 }

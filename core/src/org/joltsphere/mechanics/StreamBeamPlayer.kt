@@ -111,7 +111,6 @@ open class StreamBeamPlayer(private val world: World, x: Float, y: Float, privat
             body.setLinearVelocity(0f, 0f)
             body.applyLinearImpulse(Vector2(0f, 12f), body.position, true)
         }
-        //body.applyForceToCenter(0, 40, true);
     }
 
     fun rotateAimLeft() {
@@ -138,10 +137,7 @@ open class StreamBeamPlayer(private val world: World, x: Float, y: Float, privat
     }
 
     fun fire() {
-        if (energyLevel >= maxEnergy)
-            canFire = false
-        else
-            canFire = true
+        canFire = energyLevel < maxEnergy // if energy level goes above max energy, canFire = false
         if (canFire) {
             energyLevel += 1f
             ballsTryingToBeFired += dt / firingRate

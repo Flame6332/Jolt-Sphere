@@ -40,8 +40,8 @@ class Scene1 (internal val game: JoltSphereMain) : Screen {
         ent.createPlatform1(world)
 
         val x = 300
-        arena.players.add(ArenaPlayer((game.width / 2 + x).toInt(), 300, world, 1, Color.FIREBRICK))
-        arena.players.add(ArenaPlayer((game.width / 2 - x).toInt(), 300, world, 2, Color.BLUE))
+        arena.addPlayer(ArenaPlayer((game.width / 2 + x).toInt(), 300, world, 1, Color.FIREBRICK))
+        arena.addPlayer(ArenaPlayer((game.width / 2 - x).toInt(), 300, world, 2, Color.BLUE))
 
         contLis = ArenaContactListener(arena.players.size)
         world.setContactListener(contLis)
@@ -105,8 +105,8 @@ class Scene1 (internal val game: JoltSphereMain) : Screen {
         game.font.draw(game.batch, "" + arena.players.get(0).knockouts, game.width * 0.27f, game.height * 0.085f)
         game.font.draw(game.batch, "" + arena.players.get(1).knockouts, game.width * 0.72f, game.height * 0.085f)
 
-        if (arena.players.get(0).canAttack) game.font.draw(game.batch, "Jolt! < ^ >", game.width * 0.85f, game.height * 0.1f)
-        if (arena.players.get(1).canAttack) game.font.draw(game.batch, "Jolt! WASD", game.width * 0.05f, game.height * 0.1f)
+        if (arena.players.get(0).canSmash) game.font.draw(game.batch, "Jolt! < ^ >", game.width * 0.85f, game.height * 0.1f)
+        if (arena.players.get(1).canSmash) game.font.draw(game.batch, "Jolt! WASD", game.width * 0.05f, game.height * 0.1f)
 
         if (isTimerEnabled) game.font.draw(game.batch, (timer / 60).toInt().toString() + " : " + Math.round((timer / 60 - (timer / 60).toInt()) * 60), game.width * 0.46f, game.height * 0.92f)
 

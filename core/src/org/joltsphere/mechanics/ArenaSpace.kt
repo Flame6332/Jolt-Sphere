@@ -6,7 +6,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.utils.Array
 
-class ArenaSpace(var width: Int, var height: Int) {
+class ArenaSpace(var width: Int, var height: Int) : ArenaPlayerEventListener {
 
     var players: Array<ArenaPlayer> = Array<ArenaPlayer>()
 
@@ -14,19 +14,16 @@ class ArenaSpace(var width: Int, var height: Int) {
 
     }
 
+    fun addPlayer(arenaPlayer: ArenaPlayer) {
+        arenaPlayer.event = this
+        players.add(arenaPlayer)
+    }
+
     fun update(dt: Float, contacts: Array<Int>) {
 
         for (i in 1..players.size) {
             players.get(i - 1).update(contacts.get(i - 1), dt, width, height)
-
-            if (players.get(i - 1).wasKnockedOut) {
-                players.get(i - 1).wasKnockedOut = false // resets event
-                for (j in 1..players.size) {
-                    if (j != i) players.get(j - 1).otherPlayerKnockedOut()
-                }
-            }
-
-        }
+       }
 
     }
 
@@ -66,6 +63,12 @@ class ArenaSpace(var width: Int, var height: Int) {
         if (!Gdx.input.isKeyPressed(modifier)) players.get(player).notMagnifying()
     }
 
+    override fun playerKnockedOut(knockedOutPlayer: ArenaPlayer) {
+        for (player in players) {
+            if (player != knockedOutPlayer) player.otherPlayerKnockedOut()
+        }
+    }
+
     fun playerMagnified(player: Int) {
         if (players.get(player).canMagnify()) {
             var magnifyingPlayer = Vector2()
@@ -87,4 +90,8 @@ class ArenaSpace(var width: Int, var height: Int) {
         }
     }
 
+}
+
+interface ArenaPlayerEventListener {
+    fun playerKnockedOut(arenaPlayer: ArenaPlayer) // called whenever a player knocked out
 }

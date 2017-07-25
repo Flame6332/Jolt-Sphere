@@ -1,10 +1,6 @@
 package org.joltsphere.mechanics
 
-import com.badlogic.gdx.physics.box2d.Contact
-import com.badlogic.gdx.physics.box2d.ContactImpulse
-import com.badlogic.gdx.physics.box2d.ContactListener
-import com.badlogic.gdx.physics.box2d.Fixture
-import com.badlogic.gdx.physics.box2d.Manifold
+import com.badlogic.gdx.physics.box2d.*
 import com.badlogic.gdx.utils.Array
 
 /* TODO
@@ -16,8 +12,8 @@ class ArenaContactListener(playerCount: Int) : ContactListener {
 
     var pvpContact: Byte = 0
 
-    private var fa: Fixture? = null
-    private var fb: Fixture? = null
+    private lateinit var bA: Body
+    private lateinit var bB: Body
 
     init {
         for (i in 1..playerCount) {
@@ -27,8 +23,8 @@ class ArenaContactListener(playerCount: Int) : ContactListener {
 
     override fun beginContact(contact: Contact) {
 
-        fa = contact.fixtureA
-        fb = contact.fixtureB
+        bA = contact.fixtureA.body
+        bB = contact.fixtureB.body
 
         for (i in 1..playerContacts.size) {
             if (isContacting("ground", "p" + i)) playerContacts.set(i - 1, playerContacts.get(i - 1) + 1)
@@ -40,8 +36,8 @@ class ArenaContactListener(playerCount: Int) : ContactListener {
 
     override fun endContact(contact: Contact) {
 
-        fa = contact.fixtureA
-        fb = contact.fixtureB
+        bA = contact.fixtureA.body
+        bB = contact.fixtureB.body
 
         for (i in 1..playerContacts.size) {
             if (isContacting("ground", "p" + i)) playerContacts.set(i - 1, playerContacts.get(i - 1) - 1)
@@ -56,9 +52,9 @@ class ArenaContactListener(playerCount: Int) : ContactListener {
     override fun postSolve(contact: Contact, impulse: ContactImpulse) {}
 
     private fun isContacting(f1: String, f2: String): Boolean {
-        if (fa!!.userData == f1 && fb!!.userData == f2)
+        if (bA.userData == f1 && bB.userData == f2)
             return true
-        else if (fa!!.userData == f2 && fb!!.userData == f1)
+        else if (bA.userData == f2 && bB.userData == f1)
             return true
         else
             return false
