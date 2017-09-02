@@ -37,7 +37,7 @@ class ArenaPlayer(xpos: Int, ypos: Int, var world: World, var player: Int, var c
     lateinit var fdefSmashJump: FixtureDef
 
     var knockouts = 0
-    private var dt: Float = 1 / 60f // default value
+    var dt: Float = 1 / 60f // default value
 
     var smashRestitution: Float = 0f // restitution of smash object
     var smashDensity: Float = 80f
@@ -91,6 +91,8 @@ class ArenaPlayer(xpos: Int, ypos: Int, var world: World, var player: Int, var c
     fun update(contact: Int, deltaTime: Float, width: Int, height: Int) {
         dt = deltaTime
         arenaSpace = 0.5f * height
+
+        // TODO update input booleans
 
         /* Basic Values if on the Ground */
         checkIfGrounded(contact)
@@ -255,10 +257,10 @@ class ArenaPlayer(xpos: Int, ypos: Int, var world: World, var player: Int, var c
     var canSmashJump: Boolean = false
     var isGrounded: Boolean = false
 
-    val isAttacking: Boolean
+    /*val isAttacking: Boolean
         get() {
             return isSmashing || isMagnifying || isSmashJumping
-        }
+        }*/
 
     private fun updateAttackCooldown(dt: Float) {
         if (!isAttacking) {
@@ -277,9 +279,121 @@ class ArenaPlayer(xpos: Int, ypos: Int, var world: World, var player: Int, var c
         if up clicked --- in air -> double jump detachment smash ::: if down pressed -> meteor shower
                       --- on ground -> up smash
          if down clicked again -> super smash
-
          two ways to end an attack: out of time |or| premature end
      */
+
+    /*
+        init
+        update cycle
+        *on release, trigger end
+        end
+
+        in attacks line it up:
+
+                      V
+                VV . V^ . *V^
+        VVV . VV^ . *VV^ . V^V  . V^^
+
+     */
+
+    var isAttacking = false; get() { return isSmashing || isMagnifying || isSmashJumping }
+    var isInOffensive = false // is attacking + if higher level paused in between attacks
+    var isLeftPressed = false
+    var isRightPressed = false
+    var isUpJustPressed = false
+    var isUpPressed = false
+    var isUpJustReleased = false
+    var isDownJustPressed = false
+    var isDownPressed = false
+    var isDownJustReleased = false
+    var wasDownJustPressedLast = false // used if up is just pressed to change input dominance
+    var isVoidingUpInput = false
+    var isVoidingDownInput = false
+    var canFriendlyFire = false
+    var energyLevel: Float = 0f
+
+    fun updateInput(isUp: Boolean, isJustUp: Boolean, isDown: Boolean, isJustDown: Boolean, isLeft: Boolean, isRight: Boolean) {
+        // check if variables just changed before updating them to see if anything was just released
+        if (isUpPressed && !isUp) isUpJustReleased = true
+            else isUpJustReleased = false
+        if (isDownPressed && !isDown) isDownJustReleased = true
+            else isDownJustReleased = false
+
+        isUpPressed = isUp
+        isUpJustPressed = isJustUp
+        isDownPressed = isDown
+        isDownJustPressed = isJustDown
+        isLeftPressed = isLeft
+        isRightPressed = isRight
+
+        // if you are holding up and then click down while still holding up
+        if (isUpPressed && !isUpJustPressed && isDownJustPressed) {
+            isVoidingUpInput = true
+        }
+        // TODO add system for when down is pressed and when up is pressed
+    }
+
+    fun updateAttacks() {
+        if (isDownJustPressed && !isInOffensive && energyLevel > 1) {
+            isInOffensive = true
+            energyLevel -= 1f
+            isAttacking = true
+            // and so the smash begins
+            // TODO start smash attack
+        }
+    }
+
+    // TODO add team system that can scale to an infinite number of players
+    open class Attack (val length: Float) {
+        var isAttacking: Boolean = false
+        var timeLeft = length
+        var hasEnded: Boolean = false
+        /** called outside on the start of attack */
+        fun start() {
+            init()
+            isAttacking = true
+            timeLeft = length
+            // TODO change contact filtering so that attacking changes you to a specific contact filtering
+        }
+        /** called outside in game loop once per frame regardless of attack state */
+        fun update(dt: Float) {
+            if (timeLeft < 0) stop()
+            else if (isAttacking) timeLeft -= dt
+        }
+        /** called outside of class if attack is stopped or inside class if time runs out */
+        fun stop () {
+            // TODO reset contact filtering
+            if (!hasEnded) {
+                end()
+                hasEnded = true
+            }
+        }
+        // overridden in subclassses
+        open fun init() {} // start of attack
+        open fun loop(victims: Array<ArenaPlayer>) {} // attack loop, victims reffers to players being hit
+        open fun end() {} // end of attack
+    }
+
+    var smashAttack: Attack = Attack(1f)
+    inner class SmashAttack : Attack(1f) {
+        override fun init() {
+            body.destroyFixture(fixture)
+            fixture = body.createFixture(fdefSmash)
+        }
+        override fun loop(victims: Array<ArenaPlayer>) {
+            if (!isGrounded) body.applyForceToCenter(0f, -30000 * (1/60f), true) // if not grounded, down force
+            if (canJump) body.applyForceToCenter(0f, -30000 * (1/60f), true) // if within the jump delay, vaccum it had to the ground to prevent bouncing
+            for (victim in victims) {
+                val scale = 500f / maximumContactRestitution * currentRecievingSmashRestitution * (1/60f) // TODO what the crap was I thinking, this math is broken!
+                victim.body.applyLinearImpulse(Vector2(body.linearVelocity.x * scale, body.linearVelocity.y * scale), body.position, true)
+            }
+        }
+        override fun end() {
+            body.destroyFixture(fixture)
+            fixture = body.createFixture(fdefBall)
+        }
+    }
+
 
     fun smash() {
         if (canSmash) {
@@ -420,10 +534,11 @@ class ArenaPlayer(xpos: Int, ypos: Int, var world: World, var player: Int, var c
         currentRecievingSmashRestitution = 1f / energyTimer * recievingSmashRestitution
     }
 
+    // TODO remove this garbage flop of code
     fun contactingOtherPlayer(otherPlayer: ArenaPlayer) {
         if (otherPlayer.isSmashing) hitBySmash()
     }
-
+    // TODO remove this even bigger piece of garbage
     fun notContactingOtherPlayer(otherPlayer: ArenaPlayer) {
         notHitBySmash(otherPlayer)
     }
