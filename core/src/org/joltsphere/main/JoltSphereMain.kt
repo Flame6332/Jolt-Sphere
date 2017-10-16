@@ -1,10 +1,5 @@
 package org.joltsphere.main
 
-import org.joltsphere.scenes.Scene1
-import org.joltsphere.scenes.Scene2
-import org.joltsphere.scenes.Scene3
-import org.joltsphere.scenes.Scene4
-import org.joltsphere.scenes.Scene5
 import com.badlogic.gdx.Game
 
 import com.badlogic.gdx.Gdx
@@ -19,6 +14,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.utils.viewport.ExtendViewport
 import com.badlogic.gdx.utils.viewport.Viewport
+import org.joltsphere.scenes.*
 
 open class JoltSphereMain : Game() {
 
@@ -119,6 +115,10 @@ open class JoltSphereMain : Game() {
             5 -> {
                 this.setScreen(Scene5(this))
                 subtitle = "Ninja Chase"
+            }
+            6 -> {
+                this.setScreen(Scene6(this))
+                subtitle = "Reinforcement Learning Balance Stick"
             }
             else -> {
                 this.setScreen(Scene1(this))
