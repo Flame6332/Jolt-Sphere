@@ -37,7 +37,6 @@ open class JoltSphereMain : Game() {
     var phys2DCam: OrthographicCamera = OrthographicCamera()
     lateinit var view: Viewport
     lateinit var phys2Dview: Viewport
-
     lateinit var uiView: Viewport
     lateinit var batch: SpriteBatch
 
@@ -118,6 +117,10 @@ open class JoltSphereMain : Game() {
             }
             6 -> {
                 this.setScreen(Scene6(this))
+                subtitle = "Q Learning Grid World"
+            }
+            7 -> {
+                this.setScreen(Scene7(this))
                 subtitle = "Reinforcement Learning Balance Stick"
             }
             else -> {
