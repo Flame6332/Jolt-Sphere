@@ -59,8 +59,15 @@ class Scene7(internal val game: JoltSphereMain) : Screen {
 
         if (Gdx.input.isKeyPressed(Keys.LEFT)) moveLeft(dt)
         else if (Gdx.input.isKeyPressed(Keys.RIGHT)) moveRight(dt)
-        else if (base.linearVelocity.x < 0) moveRight(dt)
-        else if (base.linearVelocity.x > 0) moveLeft(dt)
+        else if (base.linearVelocity.x < -0.1f) moveRight(dt)
+        else if (base.linearVelocity.x > 0.1f) moveLeft(dt)
+        else base.setLinearVelocity(0f,base.linearVelocity.y)
+
+        /*if (Gdx.input.isKeyPressed(Keys.UP)) moveUp(dt)
+        else if (Gdx.input.isKeyPressed(Keys.DOWN)) moveDown(dt)
+        else if (base.linearVelocity.y < -0.1f) moveUp(dt)
+        else if (base.linearVelocity.y > 0.1f) moveDown(dt)
+        else base.setLinearVelocity(base.linearVelocity.x, 0f)*/
 
     }
 
