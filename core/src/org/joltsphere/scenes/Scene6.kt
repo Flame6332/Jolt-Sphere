@@ -22,8 +22,9 @@ class Scene6(internal val game: JoltSphereMain) : Screen {
 
     //val tileColor1: Color = Color.DARK_GRAY
     //val tileColor2: Color = Color.BLACK
-    val tileW = game.width/4f
-    val tileH = game.height/3f
+    val tileW = game.width/16f
+    val tileH = game.height/9f
+
     val rowCount = (game.height/tileH).toInt()
     val columnCount = (game.width/tileW).toInt()
     //var isTileColor1 = true
@@ -38,11 +39,7 @@ class Scene6(internal val game: JoltSphereMain) : Screen {
     val rewardPerDeath = -1f
 
     init {
-        tileMap[1][1].isObstacle = true
-        tileMap[3][1].isDeadly = true
-        //tileMap[5][6].isDeadly = true
-        tileMap[3][2].isTarget = true
-        //tileMap[13][2].isTarget = true
+        createTile2()
 
         for (i in 0 until columnCount) {
             tileMap[i][0].canMoveDown = false
@@ -64,7 +61,34 @@ class Scene6(internal val game: JoltSphereMain) : Screen {
         }
     }
 
-    inner class Tile() {
+    fun createTiles1() {
+        tileMap[1][1].isObstacle = true
+        tileMap[3][1].isDeadly = true
+        tileMap[3][2].isTarget = true
+    }
+    fun createTile2() {
+        tileMap[8][8].isDeadly = true
+        tileMap[0][3].isDeadly = true
+        tileMap[5][6].isDeadly = true
+        tileMap[1][1].isDeadly = true
+        tileMap[2][3].isDeadly = true
+        tileMap[2][4].isDeadly = true
+        tileMap[13][2].isTarget = true
+        tileMap[0][8].isTarget = true
+        tileMap[7][8].isTarget = true
+        tileMap[13][7].isTarget = true
+        tileMap[14][6].isTarget = true
+        tileMap[13][1].isObstacle = true
+        tileMap[10][4].isObstacle = true
+        tileMap[7][4].isObstacle = true
+        tileMap[6][5].isObstacle = true
+        tileMap[2][7].isObstacle = true
+        tileMap[6][2].isObstacle = true
+        tileMap[1][5].isObstacle = true
+        tileMap[1][6].isObstacle = true
+    }
+
+    inner class Tile {
         var isObstacle = false
         var isDeadly = false
         var isTarget = false
@@ -86,10 +110,12 @@ class Scene6(internal val game: JoltSphereMain) : Screen {
             else return onlyQ
         }
         fun optimalDirection(): Vector2 {
-            if (upQ == maxQ()) return Vector2(0f, 1f)
-            else if (rightQ == maxQ()) return Vector2(1f, 0f)
-            else if (leftQ == maxQ()) return Vector2(-1f, 0f)
-            else return Vector2(0f, -1f) // go down
+            when {
+                upQ == maxQ() -> return Vector2(0f, 1f)
+                rightQ == maxQ() -> return Vector2(1f, 0f)
+                leftQ == maxQ() -> return Vector2(-1f, 0f)
+                else -> return Vector2(0f, -1f) // go down
+            }
         }
     }
 
@@ -109,8 +135,15 @@ class Scene6(internal val game: JoltSphereMain) : Screen {
         fun saveCurrentTile() { previousTile.set(col.toFloat(), row.toFloat()) }
         fun getPreviousTile() = tileMap[previousTile.x.toInt()][previousTile.y.toInt()]
 
+        fun attemptToTranslate(dirX: Int, dirY: Int) {
+            when {
+                dirY == 1 -> if (currentTile().canMoveUp) row++
+
+            }
+        }
+
         fun moveUp() {
-            if (!currentTile().isSpecial()) { saveCurrentTile(); if (currentTile().canMoveUp) row++; updateQValue("up") }
+            if (!currentTile().isSpecial()) { saveCurrentTile(); attemptToTranslate(0,1); updateQValue("up") }
             else terminate() }
         fun moveDown() {
             if (!currentTile().isSpecial()) { saveCurrentTile(); if (currentTile().canMoveDown) row--; updateQValue("down") }
@@ -123,28 +156,34 @@ class Scene6(internal val game: JoltSphereMain) : Screen {
             else terminate() }
         fun moveOptimally()  {
             val optimalDir = currentTile().optimalDirection()
-            if (optimalDir.y == 1f) moveUp()
-            else if (optimalDir.y == -1f) moveDown()
-            else if (optimalDir.x == 1f) moveRight()
-            else if (optimalDir.x == -1f) moveLeft()
+            when {
+                optimalDir.y == 1f -> moveUp()
+                optimalDir.y == -1f -> moveDown()
+                optimalDir.x == 1f -> moveRight()
+                optimalDir.x == -1f -> moveLeft()
+            }
         }
         fun updateQValue(dir: String) {
             var prevQ = 0f
-            if (dir == "up") prevQ = getPreviousTile().upQ
-            else if (dir == "down") prevQ = getPreviousTile().downQ
-            else if (dir == "left") prevQ = getPreviousTile().leftQ
-            else if (dir == "right") prevQ = getPreviousTile().rightQ
+            when (dir) {
+                "up" -> prevQ = getPreviousTile().upQ
+                "down" -> prevQ = getPreviousTile().downQ
+                "left" -> prevQ = getPreviousTile().leftQ
+                "right" -> prevQ = getPreviousTile().rightQ
+            }
             val reward = rewardPerMove
             val deltaQ: Float = learnRate * (reward + discountFac * currentTile().maxQ() - prevQ)
-            if (dir == "up") getPreviousTile().upQ += deltaQ
-            else if (dir == "down") getPreviousTile().downQ += deltaQ
-            else if (dir == "left") getPreviousTile().leftQ += deltaQ
-            else if (dir == "right") getPreviousTile().rightQ += deltaQ
+            when (dir) {
+                "up" -> getPreviousTile().upQ += deltaQ
+                "down" -> getPreviousTile().downQ += deltaQ
+                "left" -> getPreviousTile().leftQ += deltaQ
+                "right" -> getPreviousTile().rightQ += deltaQ
+            }
         }
         fun terminate() {
             var reward = 0f
-            if (currentTile().isDeadly) reward = -1f
-            else if (currentTile().isTarget) reward = 1f
+            if (currentTile().isDeadly) reward = rewardPerDeath
+            else if (currentTile().isTarget) reward = rewardPerTarget
             val deltaQ: Float = learnRate * (reward + discountFac * currentTile().onlyQ) // termination Q function
             currentTile().onlyQ = deltaQ
             resetPlayer()
@@ -178,16 +217,6 @@ class Scene6(internal val game: JoltSphereMain) : Screen {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
 
         game.shapeRender.begin(ShapeType.Filled)
-
-        /*game.shapeRender.color = tileColor1
-        for (i in 1..rowCount) {
-            flipTileColors()
-            for (j in 1..columnCount) {
-                flipTileColors()
-                game.shapeRender.rect(tileW*(j-1), tileH*(i-1), tileW, tileH)
-            }
-        }
-        flipTileColors()*/
 
         for (x in 0 until tileMap.size) {
             for (y in 0 until tileMap.first().size){
@@ -225,22 +254,21 @@ class Scene6(internal val game: JoltSphereMain) : Screen {
         val centerOffset = -40
         val vertOffset = 15
 
+
         for (x in 0 until tileMap.size) {
             for (y in 0 until tileMap.first().size){
-                if (tileMap[x][y].isObstacle) {
-                    // TODO add necessary joke about about Mexicans
-                }
-                else if (tileMap[x][y].isTarget) {
-                    game.font.draw(game.batch, "" + Math.round(tileMap[x][y].onlyQ*100f)/100f, tileW*x +20f, tileH*(y+1)-20f)
-                }
-                else if (tileMap[x][y].isDeadly) {
-                    game.font.draw(game.batch, "" + Math.round(tileMap[x][y].onlyQ*100f)/100f, tileW*x +20f, tileH*(y+1)-20f)
-                }
-                else {
-                    game.font.draw(game.batch, "" + Math.round(tileMap[x][y].upQ * 100f) / 100f, tileW * x + tileW / 2f + centerOffset, tileH * (y + 1) - 30)
-                    game.font.draw(game.batch, "" + Math.round(tileMap[x][y].downQ * 100f) / 100f, tileW * x + tileW / 2f + centerOffset, tileH * y + 65f)
-                    game.font.draw(game.batch, "" + Math.round(tileMap[x][y].leftQ * 100f) / 100f, tileW * x + 23, tileH * y + tileH / 2f + vertOffset)
-                    game.font.draw(game.batch, "" + Math.round(tileMap[x][y].rightQ * 100f) / 100f, tileW * x + 0.73f * tileW, tileH * y + tileH / 2f + vertOffset)
+                when {
+                    tileMap[x][y].isObstacle -> {
+                        // TODO add necessary joke about about Mexicans
+                    }
+                    tileMap[x][y].isTarget -> game.font.draw(game.batch, "" + Math.round(tileMap[x][y].onlyQ*100f)/100f, tileW*x +20f, tileH*(y+1)-20f)
+                    tileMap[x][y].isDeadly -> game.font.draw(game.batch, "" + Math.round(tileMap[x][y].onlyQ*100f)/100f, tileW*x +20f, tileH*(y+1)-20f)
+                    else -> {
+                        game.font.draw(game.batch, "" + Math.round(tileMap[x][y].upQ * 100f) / 100f, tileW * x + tileW / 2f + centerOffset, tileH * (y + 1) - 30)
+                        game.font.draw(game.batch, "" + Math.round(tileMap[x][y].downQ * 100f) / 100f, tileW * x + tileW / 2f + centerOffset, tileH * y + 65f)
+                        game.font.draw(game.batch, "" + Math.round(tileMap[x][y].leftQ * 100f) / 100f, tileW * x + 23, tileH * y + tileH / 2f + vertOffset)
+                        game.font.draw(game.batch, "" + Math.round(tileMap[x][y].rightQ * 100f) / 100f, tileW * x + 0.73f * tileW, tileH * y + tileH / 2f + vertOffset)
+                    }
                 }
             }
         }
