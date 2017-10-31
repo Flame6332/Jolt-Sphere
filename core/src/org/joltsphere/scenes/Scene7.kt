@@ -39,12 +39,18 @@ class Scene7(internal val game: JoltSphereMain) : Screen {
     var horizontalStickSide = 0 // left is -1, right is 1
     var verticalStickSide = 0 // below is -1, above is 1
     var angularRotation = 0 // counterclockwise is -1, clockwise is 1
+
     // THE THREE POSSIBLE ACTIONS AT EACH TIMESTEP IS MOVE-LEFT, MOVE-RIGHT, OR DO-NOTHING
     var currentReward = 0f
+    var previousReward = 0f
     var actualAngle = 0f
 
     var qMatrix: Array<FloatArray>
     var sMatrix: Array<FloatArray>
+    var prevS = 0
+    var prevA = 0
+    var stateNum = 0
+    var didSomething = false
 
     init {
 
@@ -58,7 +64,7 @@ class Scene7(internal val game: JoltSphereMain) : Screen {
                 row(-1f, -1f, 1f), // 7
                 row(-1f, -1f, -1f)) // 8
 
-        qMatrix = Array(8, { floatArrayOf(0f, 0f, 0f) }) // A Q value for each action in each possible state
+        qMatrix = Array(8, { floatArrayOf(0f, 0f) }) // A Q value for each action in each possible state
 
         world = World(Vector2(0f, -9.8f), false) // ignore inactive objects false
         debugRender = Box2DDebugRenderer()
@@ -95,19 +101,20 @@ class Scene7(internal val game: JoltSphereMain) : Screen {
     internal fun update(dt: Float) {
 
         if (!isAutonomousEnabled && Gdx.input.isKeyJustPressed(Keys.Q)) isAutonomousEnabled = true
-
-        if (isAutonomousEnabled) {
-            moveOptimally(dt)
-        }
-        else {
-            if (Gdx.input.isKeyPressed(Keys.LEFT)) moveLeft(dt)
-            else if (Gdx.input.isKeyPressed(Keys.RIGHT)) moveRight(dt)
-            else if (base.linearVelocity.x < -0.1f) moveRight(dt)
-            else if (base.linearVelocity.x > 0.1f) moveLeft(dt)
-            else base.setLinearVelocity(0f, base.linearVelocity.y)
-        }
+        else if (Gdx.input.isKeyJustPressed(Keys.Q)) isAutonomousEnabled = false
 
         updateRewardAndState();
+        checkStateNum()
+        if (didSomething) updateQMatrix()
+
+        if (isAutonomousEnabled) moveOptimally(dt)
+        else {
+            if (Gdx.input.isKeyPressed(Keys.LEFT)) moveLeft(dt)
+            else if (Gdx.input.isKeyPressed(Keys.RIGHT)) commandRight(dt)
+            else commmandNothing(dt)
+        }
+
+        previousReward = currentReward
 
     }
 
@@ -124,10 +131,45 @@ class Scene7(internal val game: JoltSphereMain) : Screen {
         else verticalStickSide = -1
         if (horizontalStickSide == -1) currentReward = (180f - actualAngle) / 180f
         else if (horizontalStickSide == 1) currentReward = (actualAngle - 180f) / 180f
+        currentReward = currentReward * 2 - 1
+    }
+    fun checkStateNum() {
+        var currentState = floatArrayOf(horizontalStickSide.toFloat(), verticalStickSide.toFloat(), angularRotation.toFloat())
+        for (i in 0 until sMatrix.size) if (sMatrix[i] == currentState) stateNum = i
+    }
+    fun updateQMatrix() {
+        val reward = currentReward - previousReward
+        qMatrix[prevS][prevA] +=
+                learnRate * (reward + discountFac * qMatrix[stateNum].max()!! - qMatrix[prevS][prevA])
     }
 
     fun moveOptimally(dt: Float) {
-
+        var optimalAction = 0
+        for (i in 0 until columns(qMatrix))
+            if (qMatrix[stateNum][i] == qMatrix[stateNum].max())
+                optimalAction = i
+        when {
+            optimalAction == 0 -> commandLeft(dt)
+            optimalAction == 1 -> commandRight(dt)
+        }
+    }
+    fun commandLeft(dt: Float) {
+        didSomething = true
+        prevS = stateNum
+        moveLeft(dt)
+        prevA = 0
+    }
+    fun commandRight(dt: Float) {
+        didSomething = true
+        prevS = stateNum
+        prevA = 1
+        moveRight(dt)
+    }
+    fun commmandNothing(dt: Float) {
+        didSomething = false
+        if (base.linearVelocity.x < -0.1f) moveRight(dt)
+        else if (base.linearVelocity.x > 0.1f) moveLeft(dt)
+        else base.setLinearVelocity(0f, base.linearVelocity.y)
     }
     fun moveLeft(dt: Float) = base.setLinearVelocity(base.linearVelocity.x - 20*dt, 0f)
     fun moveRight(dt: Float) = base.setLinearVelocity(base.linearVelocity.x + 20*dt, 0f)
@@ -154,6 +196,7 @@ class Scene7(internal val game: JoltSphereMain) : Screen {
 
         game.batch.end()
 
+        game.phys2DCam.translate(base.position.x-game.width/2f/ppm,0f)
         game.cam.update()
         game.phys2DCam.update()
 
