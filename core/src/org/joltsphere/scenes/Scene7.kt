@@ -19,6 +19,7 @@ import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.physics.box2d.*
 import com.badlogic.gdx.physics.box2d.joints.RevoluteJoint
 import com.badlogic.gdx.physics.box2d.joints.RevoluteJointDef
+import org.joltsphere.misc.*
 
 class Scene7(internal val game: JoltSphereMain) : Screen {
 
@@ -34,7 +35,7 @@ class Scene7(internal val game: JoltSphereMain) : Screen {
     val learnRate = 0.5f
     val discountFac = 1f
 
-    // STATES (2^3 TOTAL)
+    // STATES (2^3 TOTAL) x3 actions = 24 Q values
     var horizontalStickSide = 0 // left is -1, right is 1
     var verticalStickSide = 0 // below is -1, above is 1
     var angularRotation = 0 // counterclockwise is -1, clockwise is 1
@@ -42,10 +43,24 @@ class Scene7(internal val game: JoltSphereMain) : Screen {
     var currentReward = 0f
     var actualAngle = 0f
 
+    var qMatrix: Array<FloatArray>
+    var sMatrix: Array<FloatArray>
+
     init {
 
-        world = World(Vector2(0f, -9.8f), false) // ignore inactive objects false
+        sMatrix = createMatrix( // All 8 possible states put in a matrix
+                row(1f, 1f, 1f), // 1
+                row(1f, 1f, -1f), // 2
+                row(1f, -1f, 1f), // 3
+                row(1f, -1f, -1f), // 4
+                row(-1f, 1f, 1f), // 5
+                row(-1f, 1f, -1f), // 6
+                row(-1f, -1f, 1f), // 7
+                row(-1f, -1f, -1f)) // 8
 
+        qMatrix = Array(8, { floatArrayOf(0f, 0f, 0f) }) // A Q value for each action in each possible state
+
+        world = World(Vector2(0f, -9.8f), false) // ignore inactive objects false
         debugRender = Box2DDebugRenderer()
 
         val bdef = BodyDef()
