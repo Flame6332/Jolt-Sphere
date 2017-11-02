@@ -253,7 +253,7 @@ class Scene6(internal val game: JoltSphereMain) : Screen {
         //game.font.draw(game.batch, "" + Gdx.graphics.framesPerSecond, game.width * 0.27f, game.height * 0.85f)
         val centerOffset = -40
         val vertOffset = 15
-
+        game.font.data.setScale(0.5f)
 
         for (x in 0 until tileMap.size) {
             for (y in 0 until tileMap.first().size){
@@ -267,11 +267,13 @@ class Scene6(internal val game: JoltSphereMain) : Screen {
                         game.font.draw(game.batch, "" + Math.round(tileMap[x][y].upQ * 100f) / 100f, tileW * x + tileW / 2f + centerOffset, tileH * (y + 1) - 30)
                         game.font.draw(game.batch, "" + Math.round(tileMap[x][y].downQ * 100f) / 100f, tileW * x + tileW / 2f + centerOffset, tileH * y + 65f)
                         game.font.draw(game.batch, "" + Math.round(tileMap[x][y].leftQ * 100f) / 100f, tileW * x + 23, tileH * y + tileH / 2f + vertOffset)
-                        game.font.draw(game.batch, "" + Math.round(tileMap[x][y].rightQ * 100f) / 100f, tileW * x + 0.73f * tileW, tileH * y + tileH / 2f + vertOffset)
+                        game.font.draw(game.batch, "" + Math.round(tileMap[x][y].rightQ * 100f) / 100f, tileW * x + 0.73f * tileW, tileH * y + tileH / 2f - vertOffset)
                     }
                 }
             }
         }
+
+        game.font.data.setScale(1f)
 
         game.batch.end()
 

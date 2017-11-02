@@ -79,6 +79,8 @@ class LastFrame {
     }
 }
 
+fun Int.toF(): Float = this.toFloat()
+
 /*val inputs = createMatrix(
         row(0f,0f,1f),
         row(0f,1f,1f),
