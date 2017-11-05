@@ -35,54 +35,43 @@ class Scene7(internal val game: JoltSphereMain) : Screen {
     var isAutonomousEnabled = false
     val learnRate = 0.25f
     val discountFac = 0.99f
-    val probabilityOfExploration = 0.09f
-    val actionLength = 10
-    var framesLeftUntilNextAction = actionLength
+    val probabilityOfExploration = 0.1f
+    val actionLength = 1/30f
+    var timeLeftUntilNextAction = actionLength
 
     // STATES (2^3 TOTAL) x3 actions = 24 Q values
     var horizontalStickSide = 0 // left is -1, right is 1
     var verticalStickSide = 0 // below is -1, above is 1
     var angularRotation = 0 // counterclockwise is -1, clockwise is 1
     var orangeSlice = 0 // 0 through 15 counter clockwise
-    val numberOfPizzaSlices = 64
+    val numberOfPizzaSlices = 48
 
     // THE TWO POSSIBLE ACTIONS AT EACH TIMESTEP IS MOVE-LEFT AND MOVE-RIGHT
     var currentReward = 0f
     var previousReward = 0f
     var actualAngle = 0f
 
+    var isExplorationEnabled = true
+    var didJustExplore = false
+    var isFastForwarding = false
+    var playbackSpeed = 1
+    var secondsPassed = 0f
+
     var qMatrix: Array<FloatArray>
     var sMatrix: Array<FloatArray>
     var prevS = 0
     var prevA = 0
     var stateNum = 0
-    var didSomething = false
 
     var backgroundOffset = 0f
 
     init {
 
-        /*sMatrix = createMatrix( // All 8 possible states put in a matrix
-                row(1f, 1f, 1f), // 1
-                row(1f, 1f, -1f), // 2
-                row(1f, -1f, 1f), // 3
-                row(1f, -1f, -1f), // 4
-                row(-1f, 1f, 1f), // 5
-                row(-1f, 1f, -1f), // 6
-                row(-1f, -1f, 1f), // 7
-                row(-1f, -1f, -1f)) // 8*/
-        //sMatrix = Array(numberOfPizzaSlices*2, {FloatArray(2)})
-
-        /*for (i in 0 until rows(sMatrix)) {
-            sMatrix[i][0] = i.toFloat()
-            if (i < 16) sMatrix[i][1] = 1f
-            else sMatrix[i][1] = -1f
-        }*/
-        sMatrix = createStateMatrix(intArrayOf(numberOfPizzaSlices, 4, 2))
+        sMatrix = createStateMatrix(intArrayOf(numberOfPizzaSlices, 4))
         printMatrix(sMatrix)
 
         //qMatrix = Array(numberOfPizzaSlices*2, { floatArrayOf(0f, 0f) }) // A Q value for each action in each possible state
-        qMatrix = randomMatrix(rows(sMatrix), 2)
+        qMatrix = randomMatrix(rows(sMatrix), 3)
 
         world = World(Vector2(0f, -9.8f), false) // ignore inactive objects false
         debugRender = Box2DDebugRenderer()
@@ -136,48 +125,72 @@ class Scene7(internal val game: JoltSphereMain) : Screen {
         val output = Array(stateCount, {FloatArray(variables.size)})
         var row = 0
         for (i in 0 until variables[0]) {
-            for (j in 0 until variables[1])
-                for (k in 0 until variables[2]) {
+            for (j in 0 until variables[1]) {
+                //for (k in 0 until variables[2]) {
                     output[row][0] = i.toF()
                     output[row][1] = j.toF()
-                    output[row][2] = k.toF()
+                    //output[row][2] = k.toF()
                     row++
-                }
+            }
         }
         return output
     }
-    fun getCurrentState(): FloatArray = floatArrayOf(orangeSlice.toF(), angularRotation.toF(), prevA.toF())
+    fun getCurrentState(): FloatArray = floatArrayOf(orangeSlice.toF(), angularRotation.toF())
 
     internal fun update(dt: Float) {
 
-        framesLeftUntilNextAction--
+        if (Gdx.input.isKeyJustPressed(Keys.M)) {
+            printMatrix(qMatrix)
+            println()
+        }
 
-        if (framesLeftUntilNextAction == 0) {
-            if (!isAutonomousEnabled && Gdx.input.isKeyJustPressed(Keys.Q)) isAutonomousEnabled = true
-            else if (Gdx.input.isKeyJustPressed(Keys.Q)) isAutonomousEnabled = false
+        if (!isAutonomousEnabled && Gdx.input.isKeyJustPressed(Keys.Q)) isAutonomousEnabled = true
+        else if (Gdx.input.isKeyJustPressed(Keys.Q)) isAutonomousEnabled = false
+
+        if (!isFastForwarding && Gdx.input.isKeyJustPressed(Keys.F)) isFastForwarding = true
+        else if (Gdx.input.isKeyJustPressed(Keys.F)) isFastForwarding = false
+
+        if (Gdx.input.isKeyPressed(Keys.PERIOD)) playbackSpeed++
+        else if (Gdx.input.isKeyPressed(Keys.COMMA) && playbackSpeed != 1) playbackSpeed--
+
+        if (!isFastForwarding) stepSimulation(dt)
+        else for (i in 1..playbackSpeed) stepSimulation(1/30f)
+
+        if (isExplorationEnabled && Gdx.input.isKeyJustPressed(Keys.E)) isExplorationEnabled = false
+        else if (Gdx.input.isKeyJustPressed(Keys.E)) isExplorationEnabled = true
+
+    }
+
+    fun stepSimulation(dt: Float) {
+        timeLeftUntilNextAction-=dt
+
+        if (timeLeftUntilNextAction <= 0) {
 
             updateRewardAndState()
             checkStateNum()
-            if (didSomething) updateQMatrix()
+            updateQMatrix()
 
             if (isAutonomousEnabled) {
-                if (Math.random() > probabilityOfExploration && currentReward < 0) moveOptimally(dt)
-                else {
-                    if (Math.random() < 0.5) commandLeft(dt)
-                    else commandRight(dt)
+                if (Math.random() < probabilityOfExploration && isExplorationEnabled) {
+                    val rand = Math.random()
+                    didJustExplore = true
+                    if (rand < 1/3f) commandLeft(dt)
+                    else if (rand > 2/3f) commandRight(dt)
+                    else commandNothing(dt)
                 }
+                else moveOptimally(dt)
             } else {
                 if (Gdx.input.isKeyPressed(Keys.LEFT)) commandLeft(dt)
                 else if (Gdx.input.isKeyPressed(Keys.RIGHT)) commandRight(dt)
-                else commmandNothing(dt)
+                else commandNothing(dt)
             }
 
-            framesLeftUntilNextAction = actionLength
+            timeLeftUntilNextAction = actionLength
             previousReward = currentReward
         }
-
+        world.step(dt, 6, 2)
         backgroundOffset -= base.linearVelocity.x*2.85f
-
+        secondsPassed += dt
     }
 
     fun updateRewardAndState() {
@@ -198,19 +211,27 @@ class Scene7(internal val game: JoltSphereMain) : Screen {
         if (horizontalStickSide == -1) currentReward = (180f - actualAngle) / 180f
         else if (horizontalStickSide == 1) currentReward = (actualAngle - 180f) / 180f
         orangeSlice = 0
-        var loopAngle = actualAngle
-        for (i in 1..16)
-            if (i*(360/numberOfPizzaSlices) > actualAngle) {
+        for (i in 1..numberOfPizzaSlices)
+            if (i.toF()*(360f/numberOfPizzaSlices) > actualAngle) {
                 orangeSlice = i-1
                 break
             }
         currentReward = currentReward * 2 - 1
-        if (actualAngle < 13 || actualAngle > 347) currentReward += 4
-        //if (actualAngle < 180+13 && actualAngle > 347-180) currentReward -= 4
+        //currentReward = 0f
+        if (actualAngle < 3 || actualAngle > 357) currentReward += 5
+        if (actualAngle < 180+13 && actualAngle > 347-180) currentReward -= 4
         //if (currentReward < 0) currentReward = -0.2f
     }
     fun checkStateNum() {
-        for (i in 0 until sMatrix.size) if (sMatrix[i] == getCurrentState()) stateNum = i
+        for (i in 0 until sMatrix.size)
+            if (sMatrix[i][0].toInt() == getCurrentState()[0].toInt() &&
+                    sMatrix[i][1].toInt() == getCurrentState()[1].toInt()) stateNum = i
+    }
+    fun getTimePassed(): String {
+        val minutes = (secondsPassed/60f).toInt().toString()
+        var seconds = (((secondsPassed/60f) - (secondsPassed/60f).toInt())*60).toInt().toString()
+        if (seconds.length == 1) seconds = "0" + seconds
+        return minutes + ":" + seconds
     }
     fun updateQMatrix() {
         val reward = currentReward
@@ -219,6 +240,7 @@ class Scene7(internal val game: JoltSphereMain) : Screen {
     }
 
     fun moveOptimally(dt: Float) {
+        didJustExplore = false
         var optimalAction = 0
         for (i in 0 until columns(qMatrix))
             if (qMatrix[stateNum][i] == qMatrix[stateNum].max())
@@ -226,45 +248,45 @@ class Scene7(internal val game: JoltSphereMain) : Screen {
         when {
             optimalAction == 0 -> commandLeft(dt)
             optimalAction == 1 -> commandRight(dt)
+            optimalAction == 2 -> commandNothing(dt)
         }
     }
     fun commandLeft(dt: Float) {
-        didSomething = true
         prevS = stateNum
         moveLeft(dt)
         prevA = 0
     }
     fun commandRight(dt: Float) {
-        didSomething = true
         prevS = stateNum
         prevA = 1
         moveRight(dt)
     }
-    fun commmandNothing(dt: Float) {
-        didSomething = false
-        base.setLinearVelocity(0f, 0f)
-        //if (base.linearVelocity.x < -0.1f) moveRight(dt)
-        //else if (base.linearVelocity.x > 0.1f) moveLeft(dt)
-        //else base.setLinearVelocity(0f, base.linearVelocity.y)
+    fun commandNothing(dt: Float) {
+        prevS = stateNum
+        prevA = 2
+        //base.setLinearVelocity(0f, 0f)
+        if (base.linearVelocity.x < -0.1f) moveRight(dt)
+        else if (base.linearVelocity.x > 0.1f) moveLeft(dt)
+        else base.setLinearVelocity(0f, base.linearVelocity.y)
     }
-    fun moveLeft(dt: Float) = base.setLinearVelocity(-4.5f, 0f)
-    fun moveRight(dt: Float) = base.setLinearVelocity(4.5f, 0f)
-    //fun moveLeft(dt: Float) = base.setLinearVelocity(base.linearVelocity.x - 20*dt, 0f)
-    //fun moveRight(dt: Float) = base.setLinearVelocity(base.linearVelocity.x + 20*dt, 0f)
+    //val speed = 6f
+    val maxSpeed = 30f
+    //fun moveLeft(dt: Float) = base.setLinearVelocity(-speed, 0f)
+    //fun moveRight(dt: Float) = base.setLinearVelocity(speed, 0f)
+    fun moveLeft(dt: Float) { if (base.linearVelocity.x > -maxSpeed) base.setLinearVelocity(base.linearVelocity.x - 25*dt, 0f) }
+    fun moveRight(dt: Float) { if (base.linearVelocity.x < maxSpeed) base.setLinearVelocity(base.linearVelocity.x + 25*dt, 0f) }
 
     override fun render(dt: Float) {
         update(dt)
         Gdx.gl.glClearColor(0f, 0f, 0f, 1f)
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
 
-        world.step(dt, 6, 2)
-
         game.shapeRender.begin(ShapeType.Filled)
 
-        game.shapeRender.setColor(0.2f,0.2f,0.2f,1f)
+        game.shapeRender.setColor(0.1f,0.1f,0.1f,1f)
 
-        for (i in 0..300) game.shapeRender.rect(i*game.width + backgroundOffset, 0f, game.width*(1/4f), game.height)
-        for (i in 0..300) game.shapeRender.rect(-i*game.width + backgroundOffset - game.width, 0f, game.width*(1/4f), game.height)
+        for (i in 0..3000) game.shapeRender.rect(i*game.width + backgroundOffset, 0f, game.width*(1/4f), game.height)
+        for (i in 0..3000) game.shapeRender.rect(-i*game.width + backgroundOffset - game.width, 0f, game.width*(1/4f), game.height)
         //game.shapeRender.rect(0.5f*game.width + backgroundOffset, 0f, game.width*(1/4f), game.height)
         //game.shapeRender.rect(game.width + backgroundOffset, 0f, game.width*(1/4f), game.height)
         //game.shapeRender.rect(1.5f*game.width + backgroundOffset, 0f, game.width*(1/4f), game.height)
@@ -285,11 +307,20 @@ class Scene7(internal val game: JoltSphereMain) : Screen {
         debugRender.render(world, game.phys2DCam.combined)
 
         game.batch.begin()
-
         game.font.draw(game.batch, "" + Gdx.graphics.framesPerSecond, game.width * 0.27f, game.height * 0.85f)
         game.font.draw(game.batch, "" + orangeSlice, game.width * 0.5f, game.height * 0.5f)
         game.font.draw(game.batch, "R = " + Math.round(currentReward*1000f)/1000f, game.width * 0.1f, game.height * 0.1f)
         game.font.draw(game.batch, "R/S = " + Math.round(joint.jointSpeed*1000f)/1000f, game.width * 0.8f, game.height * 0.1f)
+        game.font.draw(game.batch, "Current State $stateNum: ${sMatrix[stateNum][0]} ${sMatrix[stateNum][1]}", 20f, game.height - 110f)
+        game.font.draw(game.batch, getTimePassed(), 70f, game.height/2f)
+        if (isFastForwarding) game.font.draw(game.batch, "Playback Rate: " + 2 * playbackSpeed, 20f, game.height - 50f)
+
+        game.font.color = Color.GREEN
+        if (isExplorationEnabled)
+            game.font.draw(game.batch, "EXPLORING OPPORTUNITIES", game.width - 1300f, game.height - 180f)
+        if (didJustExplore)
+            game.font.draw(game.batch, "JUST EXPLORED", game.width - 1200f, game.height - 250f)
+        game.font.color = Color.WHITE
 
         game.batch.end()
 
