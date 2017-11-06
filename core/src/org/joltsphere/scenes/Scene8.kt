@@ -11,7 +11,10 @@
 *   that indicated changes in elevation of the terrain points ahead. I hypothesize that you could get
 *   much more realistic and adaptable results if instead you use an array of raycasts that point out in
 *   a direction relative to the angle and position of the eye, with many more raycasts in the center of
-*   the field of view and t
+*   the field of view and than the edges of the 180 degrees. Anyway though, all of these specific details
+*   are for the future, right now I just want to get a basic walking creature, these extra features will
+*   require DEEP Q-learning anyway and I don't know how to do that yet. I'll figure out deep Q-learning here,
+*   then I'll move onto the big picture!
 *
 */
 
@@ -36,9 +39,19 @@ class Scene8(internal val game: JoltSphereMain) : Screen {
     internal var debugRender: Box2DDebugRenderer
 
     internal var ppm = JoltSphereMain.ppm
-    internal var base: Body
-    internal var stick: Body
-    internal var joint: RevoluteJoint
+    internal var ground: Body
+    internal var torso: Body
+    internal var legRear: Body
+    internal var legFront: Body
+    internal var jointRear: RevoluteJoint
+    internal var jointFront: RevoluteJoint
+
+    // STATES
+    var angleSliceRear = 0
+    var angleSliceFront = 0
+    val numberOfPizzaSlices = 12
+    var angularRotRear = 0 // counterclockwise is -1, clockwise is 1
+    var angularRotFront = 0 // counterclockwise is -1, clockwise is 1
 
     var isAutonomousEnabled = false
     val learnRate = 0.25f
@@ -46,15 +59,6 @@ class Scene8(internal val game: JoltSphereMain) : Screen {
     val probabilityOfExploration = 0.1f
     val actionLength = 1/30f
     var timeLeftUntilNextAction = actionLength
-
-    // STATES (2^3 TOTAL) x3 actions = 24 Q values
-    var horizontalStickSide = 0 // left is -1, right is 1
-    var verticalStickSide = 0 // below is -1, above is 1
-    var angularRotation = 0 // counterclockwise is -1, clockwise is 1
-    var orangeSlice = 0 // 0 through 15 counter clockwise
-    val numberOfPizzaSlices = 48
-
-    // THE TWO POSSIBLE ACTIONS AT EACH TIMESTEP IS MOVE-LEFT AND MOVE-RIGHT
     var currentReward = 0f
     var previousReward = 0f
     var actualAngle = 0f
@@ -71,45 +75,48 @@ class Scene8(internal val game: JoltSphereMain) : Screen {
     var prevA = 0
     var stateNum = 0
 
-    var backgroundOffset = 0f
-
     init {
 
-        sMatrix = createStateMatrix(intArrayOf(numberOfPizzaSlices, 4))
+        sMatrix = createPotentialityMatrix(intArrayOf(numberOfPizzaSlices, numberOfPizzaSlices, 2, 2))
 
-        //qMatrix = Array(numberOfPizzaSlices*2, { floatArrayOf(0f, 0f) }) // A Q value for each action in each possible state
         qMatrix = randomMatrix(rows(sMatrix), 3)
 
         world = World(Vector2(0f, -9.8f), false) // ignore inactive objects false
         debugRender = Box2DDebugRenderer()
 
         val bdef = BodyDef()
-        bdef.type = BodyDef.BodyType.KinematicBody
-        bdef.position.set(game.width/2f / ppm, game.height*0.1f / ppm)
-        base = world.createBody(bdef)
+        bdef.type = BodyDef.BodyType.DynamicBody
+        bdef.position.set(game.width/2f /ppm, game.height*0.1f /ppm)
+        torso = world.createBody(bdef)
+        legFront = world.createBody(bdef)
+        legRear = world.createBody(bdef)
         val fdef = FixtureDef()
         val polygon = PolygonShape()
-        polygon.setAsBox(180f/ppm, 90f/ppm)
+        polygon.setAsBox(1f, 0.4f)
         fdef.shape = polygon
-        fdef.density = 40f
-        base.createFixture(fdef)
+        fdef.density = 10f
+        torso.createFixture(fdef)
+        polygon.setAsBox(0.05f, 0.4f)
+        fdef.shape = polygon
+        legFront.createFixture(fdef)
+        legRear.createFixture(fdef)
 
-        bdef.type = BodyDef.BodyType.DynamicBody
-        bdef.position.y = game.height/2f/ppm
-        stick = world.createBody(bdef)
-        polygon.setAsBox(10f/ppm, 700f/ppm)
+        bdef.type = BodyDef.BodyType.StaticBody
+        bdef.position.y = 0f
+        ground = world.createBody(bdef)
+        polygon.setAsBox(game.width*50/ppm, 90/ppm)
         fdef.shape = polygon
-        stick.createFixture(fdef)
+        ground.createFixture(fdef)
 
         val rdef = RevoluteJointDef()
-        rdef.bodyA = base
-        rdef.bodyB = stick
-        rdef.localAnchorA.set(0f, 90f/ppm)
-        rdef.localAnchorB.set(0f, -700f/ppm)
-        joint = world.createJoint(rdef) as RevoluteJoint
-        stick.angularDamping = 0.6f
-
-        stick.applyLinearImpulse(Vector2(-10f, 0f), stick.localCenter, true)
+        rdef.bodyA = torso
+        rdef.bodyB = legRear
+        rdef.localAnchorA.set(-1f, -0.4f)
+        rdef.localAnchorB.set(0f, 0.4f)
+        jointRear = world.createJoint(rdef) as RevoluteJoint
+        rdef.bodyB = legFront
+        rdef.localAnchorA.set(1f, 0.4f)
+        jointFront = world.createJoint(rdef) as RevoluteJoint
 
     }
 /*
@@ -126,12 +133,12 @@ class Scene8(internal val game: JoltSphereMain) : Screen {
 2 1 0
 2 1 1
 */
-    fun createStateMatrix(variables: IntArray): Array<FloatArray> {
+    fun createPotentialityMatrix(variables: IntArray): Array<FloatArray> {
         var stateCount = 1
         for (variable in variables) stateCount *= variable
         val output = Array(stateCount, {FloatArray(variables.size)})
         var row = 0
-        for (i in 0 until variables[0]) {
+        for (i in 0 until variables[0]) { // TODO Figure out an algorithim that does for loops within for loops
             for (j in 0 until variables[1]) {
                 //for (k in 0 until variables[2]) {
                     output[row][0] = i.toF()
@@ -142,7 +149,7 @@ class Scene8(internal val game: JoltSphereMain) : Screen {
         }
         return output
     }
-    fun getCurrentState(): FloatArray = floatArrayOf(orangeSlice.toF(), angularRotation.toF())
+    fun getCurrentState(): FloatArray = floatArrayOf(angleSliceRear.toF(), angleSliceFront.toF(), angularRotRear.toF(), angularRotFront.toF())
 
     internal fun update(dt: Float) {
 
