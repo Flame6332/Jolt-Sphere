@@ -1,44 +1,36 @@
-/* 10/30/2017 - Yousef Abdelgaber
-*
-*   So I made this stick balancing game around two weeks ago, I had quite a bit of fun playing it
-*   but the purpose of it wasn't to entertain, it was to make an environment that I could learn to
-*   implement a Q-learning model in.
-*
-*/
-
 /* 11/5/2017 - Yousef Abdelgaber
 *
-*   So, two days ago, I finally successfully taught a Q-learning machine learning algorithim to balance a stick,
-*   more or less forever. It took an entire week of struggling to get it to balance as I changed things to try
-*   to make it balance. In the end, last Friday, I had basically tried everything within reason and the stick still
-*   wasn't balancing. I decided to check what the issue is and I found out that the entire time, I was training it on
-*   one state because the state matrix wasn't changing. Turns out in the loop that checks what state its in, it uses an
-*   if-statement that cycles through each row of the state matrix and checks if that array is equivalent to an array of the
-*   current states, basically - if row[i](stateMatrix) == floatArrayOf(direction,angle) then currentState = i. Once I fixed
-*   this issue using a different state checking mechanic, my AI worked beautifully and I was infinitely happy, yet infinitely
-*   frustrated. What I have learned from this experience is that I shouldn't be overconfident of my code, because even if in
-*   theory my code works, sometimes a quirk in the language itself - *cough, *cough, floating point numbers - will fail you
-*   and rip you apart. Now I move on to using this code as a base for my simulated creatures that learn how to walk.
+*   This will be my first attempt at creating simulated biological creatures that learn to traverse
+*   dynamic terrain. This project was inspired by a paper titled "Deep Reinforcement Learning for
+*   Terrain-Adaptive Locomotion". In the paper, researchers built two-dimensional simulated creatures
+*   that they trained how to run over dynamic terrain using deep Q-learning. I found the results quite
+*   interesting and wanted to learn more, so I printed off their research paper and after some reading,
+*   I realized that I could do way better. One thing that bothered me is that the 21-link dog only
+*   had two legs, I want to see how much better it will be able to run on all fours. Another thing
+*   that annoyed me was how they designed the creatures' vision which consisted of a series of values
+*   that indicated changes in elevation of the terrain points ahead. I hypothesize that you could get
+*   much more realistic and adaptable results if instead you use an array of raycasts that point out in
+*   a direction relative to the angle and position of the eye, with many more raycasts in the center of
+*   the field of view and t
 *
 */
 
 package org.joltsphere.scenes
 
-import org.joltsphere.main.JoltSphereMain
-
 import com.badlogic.gdx.Gdx
-import com.badlogic.gdx.Input.Keys
+import com.badlogic.gdx.Input
 import com.badlogic.gdx.Screen
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.physics.box2d.*
 import com.badlogic.gdx.physics.box2d.joints.RevoluteJoint
 import com.badlogic.gdx.physics.box2d.joints.RevoluteJointDef
+import org.joltsphere.main.JoltSphereMain
 import org.joltsphere.misc.*
 
-class Scene7(internal val game: JoltSphereMain) : Screen {
+class Scene8(internal val game: JoltSphereMain) : Screen {
 
     internal var world: World
     internal var debugRender: Box2DDebugRenderer
@@ -154,20 +146,20 @@ class Scene7(internal val game: JoltSphereMain) : Screen {
 
     internal fun update(dt: Float) {
 
-        if (!isAutonomousEnabled && Gdx.input.isKeyJustPressed(Keys.Q)) isAutonomousEnabled = true
-        else if (Gdx.input.isKeyJustPressed(Keys.Q)) isAutonomousEnabled = false
+        if (!isAutonomousEnabled && Gdx.input.isKeyJustPressed(Input.Keys.Q)) isAutonomousEnabled = true
+        else if (Gdx.input.isKeyJustPressed(Input.Keys.Q)) isAutonomousEnabled = false
 
-        if (!isFastForwarding && Gdx.input.isKeyJustPressed(Keys.F)) isFastForwarding = true
-        else if (Gdx.input.isKeyJustPressed(Keys.F)) isFastForwarding = false
+        if (!isFastForwarding && Gdx.input.isKeyJustPressed(Input.Keys.F)) isFastForwarding = true
+        else if (Gdx.input.isKeyJustPressed(Input.Keys.F)) isFastForwarding = false
 
-        if (Gdx.input.isKeyPressed(Keys.PERIOD)) playbackSpeed++
-        else if (Gdx.input.isKeyPressed(Keys.COMMA) && playbackSpeed != 1) playbackSpeed--
+        if (Gdx.input.isKeyPressed(Input.Keys.PERIOD)) playbackSpeed++
+        else if (Gdx.input.isKeyPressed(Input.Keys.COMMA) && playbackSpeed != 1) playbackSpeed--
 
         if (!isFastForwarding) stepSimulation(dt)
         else for (i in 1..playbackSpeed) stepSimulation(1/30f)
 
-        if (isExplorationEnabled && Gdx.input.isKeyJustPressed(Keys.E)) isExplorationEnabled = false
-        else if (Gdx.input.isKeyJustPressed(Keys.E)) isExplorationEnabled = true
+        if (isExplorationEnabled && Gdx.input.isKeyJustPressed(Input.Keys.E)) isExplorationEnabled = false
+        else if (Gdx.input.isKeyJustPressed(Input.Keys.E)) isExplorationEnabled = true
 
     }
 
@@ -190,8 +182,8 @@ class Scene7(internal val game: JoltSphereMain) : Screen {
                 }
                 else moveOptimally(dt)
             } else {
-                if (Gdx.input.isKeyPressed(Keys.LEFT)) commandLeft(dt)
-                else if (Gdx.input.isKeyPressed(Keys.RIGHT)) commandRight(dt)
+                if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) commandLeft(dt)
+                else if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) commandRight(dt)
                 else commandNothing(dt)
             }
 
@@ -291,7 +283,7 @@ class Scene7(internal val game: JoltSphereMain) : Screen {
         Gdx.gl.glClearColor(0f, 0f, 0f, 1f)
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
 
-        game.shapeRender.begin(ShapeType.Filled)
+        game.shapeRender.begin(ShapeRenderer.ShapeType.Filled)
 
         game.shapeRender.setColor(0.1f,0.1f,0.1f,1f)
 
