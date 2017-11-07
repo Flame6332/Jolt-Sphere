@@ -71,6 +71,7 @@ class Scene8(internal val game: JoltSphereMain) : Screen {
 
     var qMatrix: Array<FloatArray>
     var sMatrix: Array<FloatArray>
+    var aMatrix: Array<FloatArray>
     var prevS = 0
     var prevA = 0
     var stateNum = 0
@@ -78,8 +79,9 @@ class Scene8(internal val game: JoltSphereMain) : Screen {
     init {
 
         sMatrix = createPotentialityMatrix(intArrayOf(numberOfPizzaSlices, numberOfPizzaSlices, 2, 2))
+        aMatrix = createPotentialityMatrix(intArrayOf(3,3)) // rotate rear-joint: left,right,stop; rotate front-joint: left,right,stop
 
-        qMatrix = randomMatrix(rows(sMatrix), 3)
+        qMatrix = randomMatrix(rows(sMatrix), rows(aMatrix))
 
         world = World(Vector2(0f, -9.8f), false) // ignore inactive objects false
         debugRender = Box2DDebugRenderer()
@@ -119,7 +121,7 @@ class Scene8(internal val game: JoltSphereMain) : Screen {
         jointFront = world.createJoint(rdef) as RevoluteJoint
 
     }
-/*
+/* EXAMPLE POTENTIALITY MATRICES (4 * 2 * 2 = 16)
 0 0 0
 0 0 1
 0 1 0
@@ -132,19 +134,60 @@ class Scene8(internal val game: JoltSphereMain) : Screen {
 2 0 1
 2 1 0
 2 1 1
+3 0 0
+3 0 1
+3 1 0
+3 1 1
+*//*
+0 0 0
+0 0 1
+0 0 2
+0 0 3
+0 1 0
+0 1 1
+0 1 2
+0 1 3
+1 0 0
+1 0 1
+1 0 2
+1 0 3
+1 1 0
+1 1 1
+1 1 2
+1 1 3
+*//*
+0 0 0
+0 0 1
+0 1 0
+0 1 1
+0 2 0
+0 2 1
+0 3 0
+0 3 1
+1 0 0
+1 0 1
+1 1 0
+1 1 1
+1 2 0
+1 2 1
+1 3 0
+1 3 1
 */
     fun createPotentialityMatrix(variables: IntArray): Array<FloatArray> {
         var stateCount = 1
         for (variable in variables) stateCount *= variable
         val output = Array(stateCount, {FloatArray(variables.size)})
-        var row = 0
-        for (i in 0 until variables[0]) { // TODO Figure out an algorithim that does for loops within for loops
-            for (j in 0 until variables[1]) {
-                //for (k in 0 until variables[2]) {
-                    output[row][0] = i.toF()
-                    output[row][1] = j.toF()
-                    //output[row][2] = k.toF()
-                    row++
+        var valueRepetitions = stateCount // the number of times to repeat a number on that column
+        for (i in 0 until variables.size) { // for every column
+            var row = 0
+            valueRepetitions /= variables[i] // decrease the repetition count by one division
+            for (r in 1..stateCount/(variables[i]*valueRepetitions)) { // repeats the sequence over and over to fill the whole matrix
+                for (j in 0 until variables[i]) { // for all the possible values for that column
+                    for (k in 1..valueRepetitions) { // for each repetition
+                        output[row][i] = j.toF()
+                        row++
+                    }
+                }
             }
         }
         return output

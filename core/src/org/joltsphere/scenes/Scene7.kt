@@ -138,14 +138,17 @@ class Scene7(internal val game: JoltSphereMain) : Screen {
         var stateCount = 1
         for (variable in variables) stateCount *= variable
         val output = Array(stateCount, {FloatArray(variables.size)})
-        var row = 0
-        for (i in 0 until variables[0]) {
-            for (j in 0 until variables[1]) {
-                //for (k in 0 until variables[2]) {
-                    output[row][0] = i.toF()
-                    output[row][1] = j.toF()
-                    //output[row][2] = k.toF()
-                    row++
+        var valueRepetitions = stateCount // the number of times to repeat a number on that column
+        for (i in 0 until variables.size) { // for every column
+            var row = 0
+            valueRepetitions /= variables[i] // decrease the repetition count by one division
+            for (r in 1..stateCount/(variables[i]*valueRepetitions)) { // repeats the sequence over and over to fill the whole matrix
+                for (j in 0 until variables[i]) { // for all the possible values for that column
+                    for (k in 1..valueRepetitions) { // for each repetition
+                        output[row][i] = j.toF()
+                        row++
+                    }
+                }
             }
         }
         return output
