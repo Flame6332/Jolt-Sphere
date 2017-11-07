@@ -21,7 +21,7 @@
 package org.joltsphere.scenes
 
 import com.badlogic.gdx.Gdx
-import com.badlogic.gdx.Input
+import com.badlogic.gdx.Input.Keys
 import com.badlogic.gdx.Screen
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
@@ -45,13 +45,20 @@ class Scene8(internal val game: JoltSphereMain) : Screen {
     internal var legFront: Body
     internal var jointRear: RevoluteJoint
     internal var jointFront: RevoluteJoint
+    val torsoHW = 1.3f
+    val torsoHH = 0.4f
+    val legHH = 0.6f
 
-    // STATES
+    // STATES (only 5184 * 9 possible actions, only 46000+ Q-values)
     var angleSliceRear = 0
     var angleSliceFront = 0
-    val numberOfPizzaSlices = 12
-    var angularRotRear = 0 // counterclockwise is -1, clockwise is 1
-    var angularRotFront = 0 // counterclockwise is -1, clockwise is 1
+    var torsoAngleSlice = 0
+    var torsoHeightSlice = 0
+        val numberOfPizzaSlices = 12
+        val numberOfHeightSlices = 3
+        val maxHeightSlice = 3*torsoHH*2
+    //var angularRotRear = 0 // counterclockwise is -1, clockwise is 1
+    //var angularRotFront = 0 // counterclockwise is -1, clockwise is 1
 
     var isAutonomousEnabled = false
     val learnRate = 0.25f
@@ -61,7 +68,6 @@ class Scene8(internal val game: JoltSphereMain) : Screen {
     var timeLeftUntilNextAction = actionLength
     var currentReward = 0f
     var previousReward = 0f
-    var actualAngle = 0f
 
     var isExplorationEnabled = true
     var didJustExplore = false
@@ -78,7 +84,7 @@ class Scene8(internal val game: JoltSphereMain) : Screen {
 
     init {
 
-        sMatrix = createPotentialityMatrix(intArrayOf(numberOfPizzaSlices, numberOfPizzaSlices, 2, 2))
+        sMatrix = createPotentialityMatrix(intArrayOf(numberOfPizzaSlices, numberOfPizzaSlices, numberOfPizzaSlices, numberOfHeightSlices))
         aMatrix = createPotentialityMatrix(intArrayOf(3,3)) // rotate rear-joint: left,right,stop; rotate front-joint: left,right,stop
 
         qMatrix = randomMatrix(rows(sMatrix), rows(aMatrix))
@@ -94,11 +100,11 @@ class Scene8(internal val game: JoltSphereMain) : Screen {
         legRear = world.createBody(bdef)
         val fdef = FixtureDef()
         val polygon = PolygonShape()
-        polygon.setAsBox(1f, 0.4f)
+        polygon.setAsBox(torsoHW, torsoHH)
         fdef.shape = polygon
         fdef.density = 10f
         torso.createFixture(fdef)
-        polygon.setAsBox(0.05f, 0.4f)
+        polygon.setAsBox(0.05f, legHH)
         fdef.shape = polygon
         legFront.createFixture(fdef)
         legRear.createFixture(fdef)
@@ -106,20 +112,26 @@ class Scene8(internal val game: JoltSphereMain) : Screen {
         bdef.type = BodyDef.BodyType.StaticBody
         bdef.position.y = 0f
         ground = world.createBody(bdef)
-        polygon.setAsBox(game.width*50/ppm, 90/ppm)
+        polygon.setAsBox(game.width*5000/ppm, 90/ppm)
         fdef.shape = polygon
         ground.createFixture(fdef)
 
         val rdef = RevoluteJointDef()
         rdef.bodyA = torso
         rdef.bodyB = legRear
-        rdef.localAnchorA.set(-1f, -0.4f)
-        rdef.localAnchorB.set(0f, 0.4f)
+        rdef.localAnchorA.set(-torsoHW, -torsoHH+0.03f)
+        rdef.localAnchorB.set(0f, legHH)
         jointRear = world.createJoint(rdef) as RevoluteJoint
         rdef.bodyB = legFront
-        rdef.localAnchorA.set(1f, 0.4f)
+        rdef.localAnchorA.set(torsoHW, -torsoHH+0.03f)
         jointFront = world.createJoint(rdef) as RevoluteJoint
-
+        jointRear.enableMotor(true)
+        jointFront.enableMotor(true)
+        jointRear.maxMotorTorque = 500f
+        jointFront.maxMotorTorque = 500f
+        //jointRear.enableLimit(true)
+        //jointFront.enableLimit(true)
+        jointRear.setLimits(-95*Math.PI.toF()/180f, 95f*Math.PI.toF()/180f)
     }
 /* EXAMPLE POTENTIALITY MATRICES (4 * 2 * 2 = 16)
 0 0 0
@@ -192,24 +204,25 @@ class Scene8(internal val game: JoltSphereMain) : Screen {
         }
         return output
     }
-    fun getCurrentState(): FloatArray = floatArrayOf(angleSliceRear.toF(), angleSliceFront.toF(), angularRotRear.toF(), angularRotFront.toF())
+    fun getCurrentState(): FloatArray =
+            floatArrayOf(angleSliceRear.toF(), angleSliceFront.toF(), torsoAngleSlice.toF(), torsoHeightSlice.toF())
 
     internal fun update(dt: Float) {
 
-        if (!isAutonomousEnabled && Gdx.input.isKeyJustPressed(Input.Keys.Q)) isAutonomousEnabled = true
-        else if (Gdx.input.isKeyJustPressed(Input.Keys.Q)) isAutonomousEnabled = false
+        if (!isAutonomousEnabled && Gdx.input.isKeyJustPressed(Keys.Q)) isAutonomousEnabled = true
+        else if (Gdx.input.isKeyJustPressed(Keys.Q)) isAutonomousEnabled = false
 
-        if (!isFastForwarding && Gdx.input.isKeyJustPressed(Input.Keys.F)) isFastForwarding = true
-        else if (Gdx.input.isKeyJustPressed(Input.Keys.F)) isFastForwarding = false
+        if (!isFastForwarding && Gdx.input.isKeyJustPressed(Keys.F)) isFastForwarding = true
+        else if (Gdx.input.isKeyJustPressed(Keys.F)) isFastForwarding = false
 
-        if (Gdx.input.isKeyPressed(Input.Keys.PERIOD)) playbackSpeed++
-        else if (Gdx.input.isKeyPressed(Input.Keys.COMMA) && playbackSpeed != 1) playbackSpeed--
+        if (Gdx.input.isKeyPressed(Keys.PERIOD)) playbackSpeed++
+        else if (Gdx.input.isKeyPressed(Keys.COMMA) && playbackSpeed != 1) playbackSpeed--
 
         if (!isFastForwarding) stepSimulation(dt)
         else for (i in 1..playbackSpeed) stepSimulation(1/30f)
 
-        if (isExplorationEnabled && Gdx.input.isKeyJustPressed(Input.Keys.E)) isExplorationEnabled = false
-        else if (Gdx.input.isKeyJustPressed(Input.Keys.E)) isExplorationEnabled = true
+        if (isExplorationEnabled && Gdx.input.isKeyJustPressed(Keys.E)) isExplorationEnabled = false
+        else if (Gdx.input.isKeyJustPressed(Keys.E)) isExplorationEnabled = true
 
     }
 
@@ -224,60 +237,95 @@ class Scene8(internal val game: JoltSphereMain) : Screen {
 
             if (isAutonomousEnabled) {
                 if (Math.random() < probabilityOfExploration && isExplorationEnabled) {
-                    val rand = Math.random()
                     didJustExplore = true
-                    if (rand < 1/3f) commandLeft(dt)
-                    else if (rand > 2/3f) commandRight(dt)
-                    else commandNothing(dt)
+                    command(Misc.randomInt(0, columns(aMatrix)-1))
                 }
-                else moveOptimally(dt)
+                else moveOptimally()
             } else {
-                if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) commandLeft(dt)
-                else if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) commandRight(dt)
-                else commandNothing(dt)
+                if (Gdx.input.isKeyPressed(Keys.A)) jointRear.motorSpeed = 10f
+                else if (Gdx.input.isKeyPressed(Keys.S)) jointRear.motorSpeed = -10f
+                else jointRear.motorSpeed = 0f
+                if (Gdx.input.isKeyPressed(Keys.K)) jointFront.motorSpeed = 10f
+                else if (Gdx.input.isKeyPressed(Keys.L)) jointFront.motorSpeed = -10f
+                else jointFront.motorSpeed = 0f
             }
 
             timeLeftUntilNextAction = actionLength
             previousReward = currentReward
         }
         world.step(dt, 6, 2)
-        backgroundOffset -= base.linearVelocity.x*2.85f
         secondsPassed += dt
     }
 
+    fun command(a: Int) {
+        prevS = stateNum
+        prevA = a
+        val speed = 20f
+        when (aMatrix[a][0].toInt()) {
+            0 -> jointRear.motorSpeed = -speed
+            1 -> jointRear.motorSpeed = speed
+            2 -> jointRear.motorSpeed = 0f
+        }
+        when (aMatrix[a][1].toInt()) {
+            0 -> jointFront.motorSpeed = -speed
+            1 -> jointFront.motorSpeed = speed
+            2 -> jointFront.motorSpeed = 0f
+        }
+    }
+
     fun updateRewardAndState() {
+        fun reduceInterval(ang: Float): Float {
+            var theta = ang
+            while (theta < 0) theta += 360
+            while (theta > 360) theta -= 360
+            return theta
+        }
+        fun findAngleSlice(degrees: Float, numberOfSlices: Int): Int {
+            var slice = 0
+            for (i in 1..numberOfSlices)
+                if (i.toF()*(360f/numberOfSlices) > degrees) {
+                    slice = i-1
+                    break
+                }
+            return slice
+        }
+        fun findDirectionalSlice(x: Float, min: Float, max: Float, numberOfSlices: Int): Int {
+            // 3 slices for height means that anything below 1/5 of the max will be 0, anything above 4/5 of the max is 4, and in between is 1, 2, or 3
+            if (x < (1f/numberOfSlices.toF())*(max-min)+min) return 0
+            else if (x > ((numberOfSlices.toF()-1)/numberOfSlices.toF())*(max-min)+min) return numberOfSlices-1
+            var slice = 1
+            for (i in 2..numberOfSlices-1) // 2,3,4 // max = 20, min = 10, sliceNum = 5, each slice = 2, anything above 18 = 4, below 12 = 0, 12-14 = 1, 14-16 = 2, 16-18 = 3
+                if (x < i.toF()*((max-min)/numberOfSlices)+min) {
+                    slice = i-1
+                    break
+                }
+            return slice
+        }
         // ANGLE = 0 is the upright postion of the stick and it increases to 360 degrees all the way around counterclockwise
-        actualAngle = (joint.jointAngle*180f/Math.PI).toFloat() // convert radians to degrees
-        while (actualAngle < 0) actualAngle += 360
-        while (actualAngle > 360) actualAngle -= 360
+        var actualRearAngle = reduceInterval((jointRear.jointAngle*180f/Math.PI).toFloat()) // convert radians to degrees
+        var actualFrontAngle = reduceInterval((jointFront.jointAngle*180f/Math.PI).toFloat()) // convert radians to degrees
+        var actualTorsoAngle = reduceInterval((torso.angle*180f/Math.PI).toFloat()) // convert radians to degrees
+        angleSliceRear = findAngleSlice(actualRearAngle, numberOfPizzaSlices)
+        angleSliceFront = findAngleSlice(actualFrontAngle, numberOfPizzaSlices)
+        torsoAngleSlice = findAngleSlice(actualTorsoAngle, numberOfPizzaSlices)
+        torsoHeightSlice = findDirectionalSlice(torso.position.y, torsoHH*2, maxHeightSlice, numberOfHeightSlices)
 
-        if (joint.jointSpeed > 1.5f) angularRotation = 3
-        else if (joint.jointSpeed < 1.5f && joint.jointSpeed > 0) angularRotation = 2
-        else if (joint.jointSpeed < 0f && joint.jointSpeed > -1.5f) angularRotation = 1
-        else if (joint.jointSpeed < -1.5f) angularRotation = 0
-
-        if (actualAngle < 180) horizontalStickSide = -1
-        else if (actualAngle > 180) horizontalStickSide = 1
-        if (actualAngle < 90 && actualAngle > 270) verticalStickSide = 1
-        else verticalStickSide = -1
-        if (horizontalStickSide == -1) currentReward = (180f - actualAngle) / 180f
-        else if (horizontalStickSide == 1) currentReward = (actualAngle - 180f) / 180f
-        orangeSlice = 0
-        for (i in 1..numberOfPizzaSlices)
-            if (i.toF()*(360f/numberOfPizzaSlices) > actualAngle) {
-                orangeSlice = i-1
-                break
-            }
-        currentReward = currentReward * 2 - 1
-        //currentReward = 0f
-        if (actualAngle < 3 || actualAngle > 357) currentReward += 5
-        if (actualAngle < 180+13 && actualAngle > 347-180) currentReward -= 4
-        //if (currentReward < 0) currentReward = -0.2f
+        currentReward = torso.linearVelocity.x*5
+        currentReward += (torso.position.y-torsoHH*2)
+        currentReward -= 5f
+        if (Math.round(actualTorsoAngle) == 180 && torso.position.y < torsoHH*4) {
+            //currentReward += 10f
+            torso.applyLinearImpulse(0f, 70f, torso.position.x-torsoHW*3, torso.position.y, true)
+        }
     }
     fun checkStateNum() {
-        for (i in 0 until sMatrix.size)
-            if (sMatrix[i][0].toInt() == getCurrentState()[0].toInt() &&
-                    sMatrix[i][1].toInt() == getCurrentState()[1].toInt()) stateNum = i
+        for (i in 0 until rows(sMatrix)) {
+            var didPassAllChecks = true
+            for (j in 0 until columns(sMatrix)) {
+                if (sMatrix[i][j].toInt() != getCurrentState()[j].toInt()) didPassAllChecks = false
+            }
+            if (didPassAllChecks) stateNum = i
+        }
     }
     fun getTimePassed(): String {
         val minutes = (secondsPassed/60f).toInt().toString()
@@ -291,42 +339,14 @@ class Scene8(internal val game: JoltSphereMain) : Screen {
                 learnRate * (reward + discountFac * qMatrix[stateNum].max()!! - qMatrix[prevS][prevA])
     }
 
-    fun moveOptimally(dt: Float) {
+    fun moveOptimally() {
         didJustExplore = false
         var optimalAction = 0
         for (i in 0 until columns(qMatrix))
             if (qMatrix[stateNum][i] == qMatrix[stateNum].max())
                 optimalAction = i
-        when {
-            optimalAction == 0 -> commandLeft(dt)
-            optimalAction == 1 -> commandRight(dt)
-            optimalAction == 2 -> commandNothing(dt)
-        }
+        command(optimalAction)
     }
-    fun commandLeft(dt: Float) {
-        prevS = stateNum
-        moveLeft(dt)
-        prevA = 0
-    }
-    fun commandRight(dt: Float) {
-        prevS = stateNum
-        prevA = 1
-        moveRight(dt)
-    }
-    fun commandNothing(dt: Float) {
-        prevS = stateNum
-        prevA = 2
-        //base.setLinearVelocity(0f, 0f)
-        if (base.linearVelocity.x < -0.1f) moveRight(dt)
-        else if (base.linearVelocity.x > 0.1f) moveLeft(dt)
-        else base.setLinearVelocity(0f, base.linearVelocity.y)
-    }
-    //val speed = 6f
-    val maxSpeed = 30f
-    //fun moveLeft(dt: Float) = base.setLinearVelocity(-speed, 0f)
-    //fun moveRight(dt: Float) = base.setLinearVelocity(speed, 0f)
-    fun moveLeft(dt: Float) { if (base.linearVelocity.x > -maxSpeed) base.setLinearVelocity(base.linearVelocity.x - 25*dt, 0f) }
-    fun moveRight(dt: Float) { if (base.linearVelocity.x < maxSpeed) base.setLinearVelocity(base.linearVelocity.x + 25*dt, 0f) }
 
     override fun render(dt: Float) {
         update(dt)
@@ -336,12 +356,8 @@ class Scene8(internal val game: JoltSphereMain) : Screen {
         game.shapeRender.begin(ShapeRenderer.ShapeType.Filled)
 
         game.shapeRender.setColor(0.1f,0.1f,0.1f,1f)
-
-        for (i in 0..3000) game.shapeRender.rect(i*game.width + backgroundOffset, 0f, game.width*(1/4f), game.height)
-        for (i in 0..3000) game.shapeRender.rect(-i*game.width + backgroundOffset - game.width, 0f, game.width*(1/4f), game.height)
-        //game.shapeRender.rect(0.5f*game.width + backgroundOffset, 0f, game.width*(1/4f), game.height)
-        //game.shapeRender.rect(game.width + backgroundOffset, 0f, game.width*(1/4f), game.height)
-        //game.shapeRender.rect(1.5f*game.width + backgroundOffset, 0f, game.width*(1/4f), game.height)
+        for (i in 0..3000) game.shapeRender.rect(i*game.width, 0f, game.width*(1/4f), game.height)
+        for (i in 0..3000) game.shapeRender.rect(-i*game.width, 0f, game.width*(1/4f), game.height)
 
         game.shapeRender.color = Color.FIREBRICK
         val hyp = 900f
@@ -360,12 +376,12 @@ class Scene8(internal val game: JoltSphereMain) : Screen {
 
         game.batch.begin()
         game.font.draw(game.batch, "" + Gdx.graphics.framesPerSecond, game.width * 0.27f, game.height * 0.85f)
-        game.font.draw(game.batch, "" + orangeSlice, game.width * 0.5f, game.height * 0.5f)
-        game.font.draw(game.batch, "R = " + Math.round(currentReward*1000f)/1000f, game.width * 0.1f, game.height * 0.1f)
-        game.font.draw(game.batch, "R/S = " + Math.round(joint.jointSpeed*1000f)/1000f, game.width * 0.8f, game.height * 0.1f)
-        game.font.draw(game.batch, "Current State $stateNum: ${sMatrix[stateNum][0]} ${sMatrix[stateNum][1]}", 20f, game.height - 110f)
+        game.font.draw(game.batch, "Current State $stateNum: ${sMatrix[stateNum][0].toInt()} ${sMatrix[stateNum][1].toInt()} ${sMatrix[stateNum][2].toInt()} ${sMatrix[stateNum][3].toInt()}", 20f, game.height - 110f)
         game.font.draw(game.batch, getTimePassed(), 70f, game.height/2f)
         if (isFastForwarding) game.font.draw(game.batch, "Playback Rate: " + 2 * playbackSpeed, 20f, game.height - 50f)
+        game.font.draw(game.batch, "ANGLE = " + Math.round(torso.angle*180f/Math.PI*1000f)/1000f, game.width * 0.8f, game.height * 0.25f)
+        game.font.draw(game.batch, "HEIGHT = " + Math.round(torso.position.y*1000f)/1000f, game.width * 0.8f, game.height * 0.1f)
+        game.font.draw(game.batch, "R = " + Math.round(currentReward*1000f)/1000f, game.width * 0.1f, game.height * 0.1f)
 
         game.font.color = Color.GREEN
         if (isExplorationEnabled)
@@ -376,7 +392,8 @@ class Scene8(internal val game: JoltSphereMain) : Screen {
 
         game.batch.end()
 
-        game.phys2DCam.translate(base.position.x-game.width/2f/ppm,0f)
+        game.phys2DCam.translate(torso.position.x-game.width/2f/ppm,0f)
+        game.cam.translate(torso.position.x*ppm - game.width/2f, 0f)
         game.cam.update()
         game.phys2DCam.update()
 

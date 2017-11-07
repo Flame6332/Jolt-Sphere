@@ -258,10 +258,10 @@ class Scene7(internal val game: JoltSphereMain) : Screen {
         for (i in 0 until columns(qMatrix))
             if (qMatrix[stateNum][i] == qMatrix[stateNum].max())
                 optimalAction = i
-        when {
-            optimalAction == 0 -> commandLeft(dt)
-            optimalAction == 1 -> commandRight(dt)
-            optimalAction == 2 -> commandNothing(dt)
+        when (optimalAction) {
+            0 -> commandLeft(dt)
+            1 -> commandRight(dt)
+            2 -> commandNothing(dt)
         }
     }
     fun commandLeft(dt: Float) {
