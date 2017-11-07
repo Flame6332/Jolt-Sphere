@@ -311,8 +311,7 @@ class Scene8(internal val game: JoltSphereMain) : Screen {
         torsoHeightSlice = findDirectionalSlice(torso.position.y, torsoHH*2, maxHeightSlice, numberOfHeightSlices)
 
         currentReward = torso.linearVelocity.x*5
-        currentReward += (torso.position.y-torsoHH*2)
-        currentReward -= 5f
+        //currentReward += (torso.position.y-torsoHH*2 - 5f
         if (Math.round(actualTorsoAngle) == 180 && torso.position.y < torsoHH*4) {
             //currentReward += 10f
             torso.applyLinearImpulse(0f, 70f, torso.position.x-torsoHW*3, torso.position.y, true)
