@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package org.joltsphere.misc
 
 import com.badlogic.gdx.math.Vector2
@@ -82,11 +84,11 @@ class LastFrame {
 fun Int.toF(): Float = this.toFloat()
 fun Double.toF(): Float = this.toFloat()
 
-/*val inputs = createMatrix(
-        row(0f,0f,1f),
-        row(0f,1f,1f),
-        row(1f,0f,1f),
-        row(1f,1f,1f))*/
+        /*val inputs = createMatrix(
+                row(0f,0f,1f),
+                row(0f,1f,1f),
+                row(1f,0f,1f),
+                row(1f,1f,1f))*/
 fun createMatrix(vararg rows: FloatArray): Array<FloatArray> = rows as Array<FloatArray>
 fun row(vararg x: Float): FloatArray = x
 fun randomMatrix(rows: Int, columns: Int): Array<FloatArray> {
