@@ -100,6 +100,8 @@ fun randomMatrix(rows: Int, columns: Int): Array<FloatArray> {
     return matrix
 }
 fun matrixMultiply(matrix1: Array<FloatArray>, matrix2: Array<FloatArray>): Array<FloatArray> {
+    if (columns(matrix1) != rows(matrix2))
+        throw IllegalArgumentException("${columns(matrix1)} columns of matrix#1 != ${rows(matrix2)} rows of matrix#2")
     val product = Array(rows(matrix1), {FloatArray(columns(matrix2))})
     for (i in 0 until matrix1.size)
         for (j in 0 until matrix2.first().size)
