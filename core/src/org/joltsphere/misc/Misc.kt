@@ -3,6 +3,7 @@
 package org.joltsphere.misc
 
 import com.badlogic.gdx.math.Vector2
+import kotlin.system.exitProcess
 
 class Misc {
     companion object {
@@ -202,8 +203,33 @@ fun printMatrix(matrix: Array<FloatArray>) {
     }
 }
 fun checkMatrixSizes(matrix1: Array<FloatArray>, matrix2: Array<FloatArray>) {
-    if (rows(matrix1) != rows(matrix2)) println("ERROR: ${rows(matrix1)} rows of matrix#1 != ${rows(matrix2)} rows of matrix#2")
-    if (columns(matrix1) != columns(matrix2)) println("ERROR: ${columns(matrix1)} columns of matrix#1 != ${columns(matrix2)} columns of matrix#2")
+    if (rows(matrix1) != rows(matrix2)) {
+        throw IllegalArgumentException("${rows(matrix1)} rows of matrix#1 != ${rows(matrix2)} rows of matrix#2")
+        exitProcess(-1)
+    }
+    if (columns(matrix1) != columns(matrix2)) {
+        throw IllegalArgumentException("${columns(matrix1)} columns of matrix#1 != ${columns(matrix2)} columns of matrix#2")
+        exitProcess(-1)
+    }
 }
 fun rows(matrix: Array<FloatArray>): Int = matrix.size
 fun columns(matrix: Array<FloatArray>): Int = matrix.first().size
+
+fun Array<FloatArray>.add(scalar: Float): Array<FloatArray> = scalarAdd(scalar, this)
+fun Array<FloatArray>.subtract(scalar: Float): Array<FloatArray> = scalarAdd(-scalar, this)
+fun Float.add(matrix: Array<FloatArray>): Array<FloatArray> = scalarAdd(this, matrix)
+fun Array<FloatArray>.multiply(scalar: Float): Array<FloatArray> = scalarMultiply(scalar, this)
+fun Float.multiply(matrix: Array<FloatArray>): Array<FloatArray> = scalarMultiply(this, matrix)
+fun Float.divide(matrix: Array<FloatArray>): Array<FloatArray> = scalarDivide(this, matrix)
+fun Array<FloatArray>.power(scalar: Float): Array<FloatArray> = scalarExponent(this, scalar)
+fun Float.power(matrix: Array<FloatArray>): Array<FloatArray> = scalarExponent(this, matrix)
+
+fun Array<FloatArray>.add(matrix: Array<FloatArray>): Array<FloatArray> = dotAdd(this, matrix)
+fun Array<FloatArray>.subtract(matrix: Array<FloatArray>): Array<FloatArray> = dotSubtract(this, matrix)
+fun Array<FloatArray>.dot(matrix: Array<FloatArray>): Array<FloatArray> = matrixMultiply(this, matrix)
+fun Array<FloatArray>.multiply(matrix: Array<FloatArray>): Array<FloatArray> = dotMultiply(this, matrix)
+fun Array<FloatArray>.divide(matrix: Array<FloatArray>): Array<FloatArray> = dotDivide(this, matrix)
+
+fun Array<FloatArray>.T(): Array<FloatArray> = transpose(this)
+fun Array<FloatArray>.absolute(): Array<FloatArray> = matrixAbsolute(this)
+fun Array<FloatArray>.mean(): Float = matrixMean(this)
