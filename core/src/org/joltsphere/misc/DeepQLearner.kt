@@ -1,25 +1,32 @@
 package org.joltsphere.misc
 
-class DeepQLearner(val numberOfStateInputs: Int, val numberOfActions: Int, val hiddenLayerConfiguration: IntArray, replayMemoryCapacity: Int, val explorationProbability: Float) {
+import jdk.nashorn.internal.runtime.RewriteException
+
+class DeepQLearner(val numberOfStateInputs: Int, val numberOfActions: Int, val hiddenLayerConfiguration: IntArray, val replayMemoryCapacity: Int, val explorationProbability: Float) {
 
     val neuralNetwork = NeuralNetwork(numberOfStateInputs, numberOfActions, hiddenLayerConfiguration)
     val replayMemory = ArrayList<Transition>()
-    var currentState = FloatArray(numberOfStateInputs)
+    var lastState = FloatArray(numberOfStateInputs)
+    var lastAction = 0
+    var currentReward = 0f
 
-    fun updateState(currentState: FloatArray) {
-        this.currentState = currentState
-    }
+    fun updateStateAndRewardThenSelectAction(currentState: FloatArray, currentReward: Float, isExplorationEnabled: Boolean): Int {
+        this.currentReward = currentReward
+        replayMemory.add(Transition(lastState, lastAction, currentReward, currentState)) // save transtition for later
+        lastState = currentState
 
-    fun selectAction(isExplorationEnabled: Boolean): Int {
-        if (isExplorationEnabled && Math.random() < explorationProbability)
-            return Misc.randomInt(0, numberOfActions - 1) // chooses random action
+        if (isExplorationEnabled && Math.random() < explorationProbability) {
+            lastAction = Misc.randomInt(0, numberOfActions - 1) // chooses random action
+        }
         else {
             val qValues = neuralNetwork.feedforward(currentState)
-            return qValues.indexOf(qValues.max()!!) // returns the action of the highest quality
+            lastAction = qValues.indexOf(qValues.max()!!) // returns the action of the highest quality
         }
+        return lastAction
     }
 
-    fun trainFromReplayMemory() {
+    fun trainFromReplayMemory(minibatchSize: Int) {
+        if (minibatchSize > replayMemoryCapacity) throw IllegalArgumentException("silly boy, the minibatch size $minibatchSize > $replayMemoryCapacity replay memory capacity")
 
     }
 
