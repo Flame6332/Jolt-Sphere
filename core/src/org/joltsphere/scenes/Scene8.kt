@@ -294,7 +294,7 @@ class Scene8(internal val game: JoltSphereMain) : Screen {
             if (x < (1f/numberOfSlices.toF())*(max-min)+min) return 0
             else if (x > ((numberOfSlices.toF()-1)/numberOfSlices.toF())*(max-min)+min) return numberOfSlices-1
             var slice = 1
-            for (i in 2..numberOfSlices-1) // 2,3,4 // max = 20, min = 10, sliceNum = 5, each slice = 2, anything above 18 = 4, below 12 = 0, 12-14 = 1, 14-16 = 2, 16-18 = 3
+            for (i in 2 until numberOfSlices) // 2,3,4 // max = 20, min = 10, sliceNum = 5, each slice = 2, anything above 18 = 4, below 12 = 0, 12-14 = 1, 14-16 = 2, 16-18 = 3
                 if (x < i.toF()*((max-min)/numberOfSlices)+min) {
                     slice = i-1
                     break
