@@ -125,7 +125,11 @@ open class JoltSphereMain : Game() {
             }
             8 -> {
                 this.setScreen(Scene8(this))
-                subtitle = "Reinforcement Learning Creatures Simulation"
+                subtitle = "Simulated Creatures Attempt #1: Q-Learner"
+            }
+            9 -> {
+                this.setScreen(Scene9(this))
+                subtitle = "Simulated Creatures Attempt #2: DEEP-Q-Learner"
             }
             else -> {
                 this.setScreen(Scene1(this))

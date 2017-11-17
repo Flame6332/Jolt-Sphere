@@ -20,7 +20,7 @@ class NeuralNetwork(val numberOfInputs: Int, val numberOfOutputs: Int, val hidde
         for (i in 1 until layerSizes.size-1) layerSizes[i] = hiddenLayerConfiguration[i-1] // for each of the hidden layers, set the layer size to the number of hidden layer neurons
 
         networkSynapses = Array(layerSizes.size-1, // create a weight matrix for every layer of the neural network except the output
-                { i -> (randomMatrix(layerSizes[i]+1,layerSizes[i+1])).multiply(2f).subtract(1f) })
+                { i -> (randomMatrix(layerSizes[i]+1,layerSizes[i+1])).multiply(0.1f)/*.multiply(2f).subtract(1f)*/ })
                 // the matrix size is equal to (layer size + a bias weight) X (layer size of the next layer); creates a random matrix *2 -1 to put all values from -1 to 1
     }
 
@@ -74,10 +74,10 @@ class NeuralNetwork(val numberOfInputs: Int, val numberOfOutputs: Int, val hidde
             // the change in synapse matrix i equals the transpose of the layer i (that feeds into synapses i) dot-product multiplied by the layer delta of the layer ahead
             deltaNetworkSynapses[i] = learningRate.multiply(layers[i].T().dot(layerDeltas[i+1]))
         }
-        println()
+        //println()
         println("Cost: " + cost)
-        println("Predictions: ")
-        printMatrix(predictedOutputs)
+        //println("Predictions: ")
+        //printMatrix(predictedOutputs)
         /*println("Input Layer: ")
         printMatrix(layers[0])
         println("Hidden Layer: ")

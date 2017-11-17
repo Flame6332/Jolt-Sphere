@@ -84,6 +84,8 @@ class LastFrame {
 
 fun Int.toF(): Float = this.toFloat()
 fun Double.toF(): Float = this.toFloat()
+fun Float.toDegrees(): Float = (this*180f)/Math.PI.toF()
+fun Float.toRadians(): Float = (this*Math.PI.toF())/180f
 
         /*val inputs = createMatrix(
                 row(0f,0f,1f),
