@@ -1,5 +1,7 @@
 package org.joltsphere.misc
 
+import java.lang.IllegalStateException
+
 /** Creates a fully fleshed out ReLu regression neural network
  *  - Feedforward on command, backpropagate to reduce error.
  *
@@ -61,6 +63,7 @@ class NeuralNetwork(val numberOfInputs: Int, val numberOfOutputs: Int, val hidde
         val layerErrors = layers.copyOf() // an array of matrices that contain the error for each layer
         cost = ( (predictedOutputs.subtract(targetOutputs)).power(2f) ).mean() // cost is found by taking the average of all the squared errors
         layerErrors[lastLayer] = 2f.multiply(predictedOutputs.subtract(targetOutputs)) // derivative of cost function
+        //printMatrix(layerErrors[lastLayer])
         val layerDeltas = layerErrors.copyOf() // last layer is equivalent already due to the lack of a final layer activation function
         val deltaNetworkSynapses = networkSynapses.copyOf()
         for (i in networkSynapses.size-1 downTo 0) {
@@ -75,7 +78,7 @@ class NeuralNetwork(val numberOfInputs: Int, val numberOfOutputs: Int, val hidde
             deltaNetworkSynapses[i] = learningRate.multiply(layers[i].T().dot(layerDeltas[i+1]))
         }
         //println()
-        println("Cost: " + cost)
+        //println("Cost: " + cost)
         //println("Predictions: ")
         //printMatrix(predictedOutputs)
         /*println("Input Layer: ")
@@ -134,22 +137,22 @@ class NeuralNetwork(val numberOfInputs: Int, val numberOfOutputs: Int, val hidde
 fun main(args: Array<String>) {
 
     val inputs = createMatrix(
-            row(0f, 0f),
-            row(0f, 1f),
-            row(1f, 0f),
-            row(1f, 1f))
+            row(0f, 0f, 0f),
+            row(0f, 1f, 0f),
+            row(1f, 0f, 1f),
+            row(1f, 1f, 1f))
 
     val targetOutputs = createMatrix(
-            row(0f),
-            row(1f),
-            row(1f),
-            row(0f))
+            row(0f, 1f, 0f),
+            row(1f, 0f, 1f),
+            row(1f, 1f, 1f),
+            row(0f, 0f, 0f))
 
-    val neuralNet = NeuralNetwork(2, 1, intArrayOf(4))
+    val neuralNet = NeuralNetwork(3, 3, intArrayOf(20,10))
 
     for (i in 1..300) neuralNet.backpropagate(inputs, targetOutputs, 0.1f)
 
-    println("Input [0, 1] = " + neuralNet.feedforward(floatArrayOf(0f,1f))[0])
-    println("Input [0, 0.5] = " + neuralNet.feedforward(floatArrayOf(0f,0.5f))[0])
+    //println("Input [0, 1] = " + neuralNet.feedforward(floatArrayOf(0f,1f))[0])
+    //println("Input [0, 0.5] = " + neuralNet.feedforward(floatArrayOf(0f,0.5f))[0])
 
 }

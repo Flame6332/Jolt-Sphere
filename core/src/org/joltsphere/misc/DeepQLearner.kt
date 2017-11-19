@@ -26,6 +26,8 @@ class DeepQLearner(val numberOfStateInputs: Int, val numberOfActions: Int, val h
     var currentReward = 0f
     var explorationProbability = explorationProbability
 
+    var timesSuccesfullyTrained = 0
+
     /** Updates the state and reward for the Q-learner to save into it's transition matrix, then returns the optimal action '
      * based off highest quality predicted Q-value for the current state, with the chance of exploration, if enabled.
      * - Note that you should only call this once per time-step to prevent possible issues.
@@ -45,6 +47,7 @@ class DeepQLearner(val numberOfStateInputs: Int, val numberOfActions: Int, val h
         else {
             val qValues = neuralNetwork.feedforward(currentState) // returns an array of Q-values in the current state
             lastAction = qValues.indexOf(qValues.max()!!) // returns the action of the highest quality
+            if (lastAction == -1) throw IllegalStateException("Outputting NaN garbage after $timesSuccesfullyTrained training passes")
         }
         return lastAction
     }
@@ -70,16 +73,25 @@ class DeepQLearner(val numberOfStateInputs: Int, val numberOfActions: Int, val h
             val targetOutputMatrix = Array(minibatchSize, {FloatArray(numberOfActions)})
 
             for (i in 0 until trainingInputMatrix.size) { // fills all the values of the input and output matrix with a state and target value
-                val randomMemoryIndex = Misc.randomInt(0, bagOfReplayMemory.size-1) // chooses a random index from the remaining options of the memory
+                var randomMemoryIndex = Misc.randomInt(0, bagOfReplayMemory.size-1) // chooses a random index from the remaining options of the memory
+                while (bagOfReplayMemory[randomMemoryIndex].action == -1) {
+                    randomMemoryIndex = Misc.randomInt(0, bagOfReplayMemory.size-1)
+                }
                 val transition = bagOfReplayMemory[randomMemoryIndex]
                 trainingInputMatrix[i] = transition.state.copyOf() // sets a row of inputs of the training matrix to a value out of the replay memory
                 val feedforwardOutput = neuralNetwork.feedforward(trainingInputMatrix[i])
                 targetOutputMatrix[i] = feedforwardOutput // set the target outputs to the predicted output so all errors are equal to zero
+                //println("Transition: ${transition.state} ${transition.action} ${transition.reward} ${transition.resultingState}")
                 targetOutputMatrix[i][transition.action] = // except the action that we're optimizing for
                         transition.reward + discountFactor * neuralNetwork.feedforward(transition.resultingState).max()!! // Bellman Equation: Q(s, a[i]) = r + γ * max<a’> Q(s’, a’)
                 bagOfReplayMemory.removeAt(randomMemoryIndex) // takes the chosen training sample out of the bag
             }
+            //println("Input: ")
+            //printMatrix(Array(1, {trainingInputMatrix[0]}))
+            //println("Output: ")
+            //printMatrix(Array(1, {targetOutputMatrix[0]}))
             neuralNetwork.backpropagate(trainingInputMatrix, targetOutputMatrix, learningRate) // gradient descent to minimize cost through backpropagation
+            timesSuccesfullyTrained++
         }
     }
 

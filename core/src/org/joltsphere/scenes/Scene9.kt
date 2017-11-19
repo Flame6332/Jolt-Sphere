@@ -37,12 +37,12 @@ class Scene9(internal val game: JoltSphereMain) : Screen {
     val legHH = 0.5f
 
     var isAutonomousEnabled = false
-    val learningRate = 0.02f
+    val learningRate = 0.0001f
     val discountFac = 0.95f
     val probabilityOfExploration = 0.05f
-    val replayMemoryCapacity = 1800
-    val minibatchSize = 400
-    val hiddenLayerConfig = intArrayOf(20,10)
+    val replayMemoryCapacity = 3 * 60 * 30
+    val minibatchSize = 300
+    val hiddenLayerConfig = intArrayOf(10)
     val numberOfActions = 3
     val actionLength = 1/30f
     var timeLeftUntilNextAction = actionLength
@@ -52,10 +52,11 @@ class Scene9(internal val game: JoltSphereMain) : Screen {
     val aiKneeRear: DeepQLearner
     val aiKneeFront: DeepQLearner
 
-    var isExplorationEnabled = true
+    var isLearningEnabled = true
     var isFastForwarding = false
     var playbackSpeed = 1
     var secondsPassed = 0f
+    var cost = 0f
 
     init {
 
@@ -176,8 +177,8 @@ class Scene9(internal val game: JoltSphereMain) : Screen {
         if (!isFastForwarding) stepSimulation(dt)
         else for (i in 1..playbackSpeed) stepSimulation(1/30f)
 
-        if (isExplorationEnabled && Gdx.input.isKeyJustPressed(Input.Keys.E)) isExplorationEnabled = false
-        else if (Gdx.input.isKeyJustPressed(Input.Keys.E)) isExplorationEnabled = true
+        if (isLearningEnabled && Gdx.input.isKeyJustPressed(Input.Keys.E)) isLearningEnabled = false
+        else if (Gdx.input.isKeyJustPressed(Input.Keys.E)) isLearningEnabled = true
 
     }
 
@@ -187,15 +188,21 @@ class Scene9(internal val game: JoltSphereMain) : Screen {
         if (timeLeftUntilNextAction <= 0) {
 
             if (isAutonomousEnabled) {
-                command(aiHipRear.updateStateAndRewardThenSelectAction(getCurrentState(), currentReward, isExplorationEnabled), jointHipRear)
-                command(aiHipFront.updateStateAndRewardThenSelectAction(getCurrentState(), currentReward, isExplorationEnabled), jointHipFront)
-                command(aiKneeRear.updateStateAndRewardThenSelectAction(getCurrentState(), currentReward, isExplorationEnabled), jointKneeRear)
-                command(aiKneeFront.updateStateAndRewardThenSelectAction(getCurrentState(), currentReward, isExplorationEnabled), jointKneeFront)
-                println()
-                aiHipRear.trainFromReplayMemory(minibatchSize, learningRate, discountFac)
-                aiHipFront.trainFromReplayMemory(minibatchSize, learningRate, discountFac)
-                aiKneeRear.trainFromReplayMemory(minibatchSize, learningRate, discountFac)
-                aiKneeFront.trainFromReplayMemory(minibatchSize, learningRate, discountFac)
+                updateReward()
+                command(aiHipRear.updateStateAndRewardThenSelectAction(getCurrentState(), currentReward, isLearningEnabled), jointHipRear)
+                command(aiHipFront.updateStateAndRewardThenSelectAction(getCurrentState(), currentReward, isLearningEnabled), jointHipFront)
+                command(aiKneeRear.updateStateAndRewardThenSelectAction(getCurrentState(), currentReward, isLearningEnabled), jointKneeRear)
+                command(aiKneeFront.updateStateAndRewardThenSelectAction(getCurrentState(), currentReward, isLearningEnabled), jointKneeFront)
+                //printMatrix(Array(1, {getCurrentState()}))
+                if (isLearningEnabled) {
+                    //aiHipRear.trainFromReplayMemory(minibatchSize, learningRate, discountFac)
+                    aiHipFront.trainFromReplayMemory(minibatchSize, learningRate, discountFac)
+                    //aiKneeRear.trainFromReplayMemory(minibatchSize, learningRate, discountFac)
+                    //aiKneeFront.trainFromReplayMemory(minibatchSize, learningRate, discountFac)
+                    cost = aiHipFront.neuralNetwork.cost
+                    println("END COST = " + cost)
+                }
+                //cost = (aiHipFront.neuralNetwork.cost + aiHipRear.neuralNetwork.cost + aiKneeFront.neuralNetwork.cost + aiKneeRear.neuralNetwork.cost) / 4f
             } else {
                 if (Gdx.input.isKeyPressed(Input.Keys.D)) jointHipRear.motorSpeed = jointSpeed
                 else if (Gdx.input.isKeyPressed(Input.Keys.F)) jointHipRear.motorSpeed = -jointSpeed
@@ -266,13 +273,12 @@ class Scene9(internal val game: JoltSphereMain) : Screen {
         game.font.draw(game.batch, "" + Gdx.graphics.framesPerSecond, game.width * 0.27f, game.height * 0.85f)
         game.font.draw(game.batch, getTimePassed(), 70f, game.height/2f)
         if (isFastForwarding) game.font.draw(game.batch, "Playback Rate: " + 2 * playbackSpeed, 20f, game.height - 50f)
-        game.font.draw(game.batch, "ANGLE = " + Math.round(torso.angle*180f/Math.PI*1000f)/1000f, game.width * 0.8f, game.height * 0.25f)
-        game.font.draw(game.batch, "HEIGHT = " + Math.round(torso.position.y*1000f)/1000f, game.width * 0.8f, game.height * 0.1f)
         game.font.draw(game.batch, "R = " + Math.round(currentReward*1000f)/1000f, game.width * 0.1f, game.height * 0.1f)
+        game.font.draw(game.batch, "Cost = " + Math.round(cost*1000f)/1000f, game.width * 0.1f, game.height * 0.3f)
 
         game.font.color = Color.GREEN
-        if (isExplorationEnabled)
-            game.font.draw(game.batch, "EXPLORING OPPORTUNITIES", game.width - 1300f, game.height - 180f)
+        if (isLearningEnabled)
+            game.font.draw(game.batch, "EXPLORATION LEARNING", game.width - 1300f, game.height - 180f)
         game.font.color = Color.WHITE
 
         game.batch.end()
