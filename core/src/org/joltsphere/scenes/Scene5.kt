@@ -45,7 +45,7 @@ class Scene5(internal val game: JoltSphereMain) : Screen {
         world.setContactListener(contLis)
 
         try {
-            map = TmxMapLoader().load("testing/testmap.tmx")
+            map = TmxMapLoader().load("testing/test_map.tmx")
         } catch (e: Exception) {
             println("Sumthin Broke")
         }

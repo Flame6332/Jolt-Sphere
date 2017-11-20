@@ -1,5 +1,8 @@
 package org.joltsphere.misc
 
+import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.files.FileHandle
+import com.badlogic.gdx.maps.tiled.TmxMapLoader
 import java.lang.IllegalStateException
 
 /** Creates a fully fleshed out ReLu regression neural network
@@ -46,8 +49,9 @@ class NeuralNetwork(val numberOfInputs: Int, val numberOfOutputs: Int, val hidde
      * @param targetOutputs a matrix with rows of the target output values corresponding to that row on the the training inputs
      * @param learningRate how large of a gradient descent step the network takes, if set too high, it will converge quickly but will be inaccurate
      *  - you must set this below 0.03, for accuracy maybe even around 0.005
+     * @param weightDecay how much the network will focus on preventing over-fitting by favoring smaller weight values, set this around or below 0.1
      */
-    fun backpropagate(trainingInputs: Array<FloatArray>, targetOutputs: Array<FloatArray>, learningRate: Float) {
+    fun backpropagate(trainingInputs: Array<FloatArray>, targetOutputs: Array<FloatArray>, learningRate: Float, weightDecay: Float) {
         // some error handling in case the training data is incompatible
         if (columns(trainingInputs) != numberOfInputs) throw IllegalArgumentException("The training data's ${columns(trainingInputs)} != $numberOfInputs input neurons")
         if (columns(targetOutputs) != numberOfOutputs) throw IllegalArgumentException("The target output's ${columns(targetOutputs)} != $numberOfOutputs output neurons")
@@ -67,7 +71,6 @@ class NeuralNetwork(val numberOfInputs: Int, val numberOfOutputs: Int, val hidde
         val layerDeltas = layerErrors.copyOf() // last layer is equivalent already due to the lack of a final layer activation function
         val deltaNetworkSynapses = networkSynapses.copyOf()
         for (i in networkSynapses.size-1 downTo 0) {
-            //var layerDelta = layerErrors[lastLayer] // if this is last layer, the delta equals the error of the last layer due to the lack of a final layer activation function
             if (i != networkSynapses.size-1) {
                 // the error of the layer this synapse[i] feeds into = to the delta of the layer ahead dot product multiplied by the transpose of the synapses ahead
                 layerErrors[i+1] = removeBiasColumn(layerDeltas[i+2].dot(networkSynapses[i+1].T()))
@@ -88,10 +91,37 @@ class NeuralNetwork(val numberOfInputs: Int, val numberOfOutputs: Int, val hidde
         println("Synapses: Input to Hidden")
         printMatrix(networkSynapses[0])
         println("Synapses: Hidden to Out")
-        printMatrix(networkSynapses[1])
-*/
+        printMatrix(networkSynapses[1])*/
+        for (i in 0 until networkSynapses.size) // the weight decay is computed to prefer smaller weights
+                networkSynapses[i] = networkSynapses[i].subtract( // subtract the changes
+                        deltaNetworkSynapses[i].add(weightDecay.multiply(zeroBiasWeights(networkSynapses[i])))) // just add the changes of the matrix + weight decay
+    }
+
+    /** Returns a string of every weight of the neural network, with each line being a different weight.
+     */
+    fun getSaveState(): String {
+        var string = ""
         for (i in 0 until networkSynapses.size)
-                networkSynapses[i] = networkSynapses[i].subtract(deltaNetworkSynapses[i]) // just add the changes of the matrix
+            for (j in 0 until rows(networkSynapses[i]))
+                for (k in 0 until columns(networkSynapses[i]))
+                    string = string + networkSynapses[i][j][k] + "\n"
+        return string
+    }
+
+    fun loadSaveState(saveState: String) {
+        try {
+            var currentLine = 1
+            for (i in 0 until networkSynapses.size)
+                for (j in 0 until rows(networkSynapses[i]))
+                    for (k in 0 until columns(networkSynapses[i])) {
+                        networkSynapses[i][j][k] = Misc.getLine(saveState, currentLine).toFloat()
+                        currentLine++
+                    }
+        }
+        catch (e: Exception) {
+            println("Failed to load")
+            println(e.message)
+        }
     }
 
     /** Adds a columns of 1's to your matrix! Have you ever wanted your layer's input values for the next layer to have a 1 in it to simulate a bias!?
@@ -111,6 +141,16 @@ class NeuralNetwork(val numberOfInputs: Int, val numberOfOutputs: Int, val hidde
         val output = Array(rows(matrix), { FloatArray(columns(matrix)-1) }) // creates a matrix of the equivalent size but with one less column
         for (i in 0 until rows(output))
             for (j in 0 until columns(output)) output[i][j] = matrix[i][j] // sets the values of the output to the values of the matrix
+        return output
+    }
+
+    /** Sets all your bias weights to zero by swapping the last row of your matrix with zeroes.
+     */
+    fun zeroBiasWeights(matrix: Array<FloatArray>): Array<FloatArray> {
+        val output = Array(rows(matrix), { FloatArray(columns(matrix)) }) // creates a matrix of the equivalent size
+        for (i in 0 until rows(matrix)-1) // counts up to all but the last row
+            for (j in 0 until columns(matrix)) output[i][j] = matrix[i][j] // sets the values of the output to the values of the matrix
+        for (i in 0 until columns(output)) output[rows(output)-1][i] = 0f // set the bias weights to zero
         return output
     }
 
@@ -150,7 +190,7 @@ fun main(args: Array<String>) {
 
     val neuralNet = NeuralNetwork(3, 3, intArrayOf(20,10))
 
-    for (i in 1..300) neuralNet.backpropagate(inputs, targetOutputs, 0.1f)
+    for (i in 1..300) neuralNet.backpropagate(inputs, targetOutputs, 0.1f, 0f)
 
     //println("Input [0, 1] = " + neuralNet.feedforward(floatArrayOf(0f,1f))[0])
     //println("Input [0, 0.5] = " + neuralNet.feedforward(floatArrayOf(0f,0.5f))[0])

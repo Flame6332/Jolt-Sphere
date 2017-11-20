@@ -62,6 +62,36 @@ class Misc {
             return vectorComponent(originPoint.x, originPoint.y, directionalPoint.x, directionalPoint.y, magnitude)
         }
 
+        /** Counts the number of times a substring is contained within a string. */
+        fun countMatches(string: String, substring: String): Int {
+            var lastIndex = 0
+            var count = 0
+            while (lastIndex != -1) {
+                lastIndex = string.indexOf(substring, lastIndex)
+                if (lastIndex != -1) {
+                    count++
+                    lastIndex += substring.length
+                }
+            }
+            return count
+        }
+
+        /** Returns a string of the a specific line within another string.
+         *
+         * @param string a multiline string that will have a line snipped out
+         * @param line the select line to be outputted, note that lines start at 1!
+         */
+        fun getLine(string: String, line: Int): String {
+            if (countMatches(string, "\n")+1 < line)
+                throw IllegalArgumentException("Silly boy, line $line doesn't exist within the ${countMatches(string, "\n")+1} lines!")
+            var remainingLines = string + "\n"
+            var output = ""
+            for (i in 1..line) {
+                if (i == line) output = remainingLines.substring(0,remainingLines.indexOf("\n",0,false))
+                remainingLines = remainingLines.removeRange(0, remainingLines.indexOf("\n") +1)
+            }
+            return output
+        }
 
     }
 }

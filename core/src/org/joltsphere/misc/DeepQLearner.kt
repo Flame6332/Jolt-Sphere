@@ -15,18 +15,21 @@ package org.joltsphere.misc
  *  information.
  * @param explorationProbability A decimal probability of exploration taking place if it is enabled. This value should be kept relatively low, '
  *  below around 0.1
+ * @param explorationLength How many timesteps the explored move will be repeated.
  */
 class DeepQLearner(val numberOfStateInputs: Int, val numberOfActions: Int, val hiddenLayerConfiguration: IntArray,
-                   val replayMemoryCapacity: Int, explorationProbability: Float) {
+                   val replayMemoryCapacity: Int, val explorationLength: Int) {
 
     val neuralNetwork = NeuralNetwork(numberOfStateInputs, numberOfActions, hiddenLayerConfiguration)
     val replayMemory = ArrayList<Transition>()
     private var lastState = FloatArray(numberOfStateInputs)
     private var lastAction = 0
     var currentReward = 0f
-    var explorationProbability = explorationProbability
+    var explorationTimer = 0
 
     var timesSuccesfullyTrained = 0
+    var name = "Neural network"
+    var isDebugging = false
 
     /** Updates the state and reward for the Q-learner to save into it's transition matrix, then returns the optimal action '
      * based off highest quality predicted Q-value for the current state, with the chance of exploration, if enabled.
@@ -36,18 +39,24 @@ class DeepQLearner(val numberOfStateInputs: Int, val numberOfActions: Int, val h
      * @param isExplorationEnabled If true, there's a previously set chance of exploration, which is required to find an optimal state.
      * @return An action value for the current state.
      */
-    fun updateStateAndRewardThenSelectAction(currentState: FloatArray, currentReward: Float, isExplorationEnabled: Boolean): Int {
+    fun updateStateAndRewardThenSelectAction(currentState: FloatArray, currentReward: Float, isExplorationEnabled: Boolean, explorationProbability: Float): Int {
         this.currentReward = currentReward
         replayMemory.add(Transition(lastState, lastAction, currentReward, currentState)) // save transition for later
         lastState = currentState // updates the last state for next loop around
 
-        if (isExplorationEnabled && Math.random() < explorationProbability) {
+        if (explorationTimer != 0) {
+            explorationTimer--
+            // last action stays the same until exploration is over
+        }
+        else if (isExplorationEnabled && Math.random() < explorationProbability) {
             lastAction = Misc.randomInt(0, numberOfActions - 1) // chooses random action
+            explorationTimer = explorationLength
         }
         else {
             val qValues = neuralNetwork.feedforward(currentState) // returns an array of Q-values in the current state
             lastAction = qValues.indexOf(qValues.max()!!) // returns the action of the highest quality
-            if (lastAction == -1) throw IllegalStateException("Outputting NaN garbage after $timesSuccesfullyTrained training passes")
+            if (isDebugging) { println("$name Q-value predictions: "); printMatrix(Array(1, {qValues})) }
+            if (lastAction == -1) throw IllegalStateException("$name is outputting NaN garbage after $timesSuccesfullyTrained training passes")
         }
         return lastAction
     }
@@ -61,9 +70,11 @@ class DeepQLearner(val numberOfStateInputs: Int, val numberOfActions: Int, val h
      *  itself, then the program will throw an error.
      * @param learningRate The learning rate of the neural network. Set this around maybe 0.03, set it too high, and the model will be inaccurate, '
      *  set it too low, and the model will take to long to converge.
+     * @param weightDecay The generalization factor of the network, set this too high and the network will over generalize and under-fit the data. '
+     *  Set this value too low, and the network explodes with huge weight values that fry the network. Around 0.1 is a good starting point.
      * @param discountFactor The model's focus on long term reward versus short term reward. Set this between 0 and 1, but it's best around 0.9 and above.
      */
-    fun trainFromReplayMemory(minibatchSize: Int, learningRate: Float, discountFactor: Float) {
+    fun trainFromReplayMemory(minibatchSize: Int, learningRate: Float, weightDecay: Float, discountFactor: Float) {
         if (minibatchSize > replayMemoryCapacity) // make sure training will even take place
             throw IllegalArgumentException("silly boy, the minibatch size $minibatchSize > $replayMemoryCapacity replay memory capacity")
         if (minibatchSize <= replayMemory.size) { // if enough training data has been acquired to satisfy a minibatch training sequence
@@ -90,7 +101,7 @@ class DeepQLearner(val numberOfStateInputs: Int, val numberOfActions: Int, val h
             //printMatrix(Array(1, {trainingInputMatrix[0]}))
             //println("Output: ")
             //printMatrix(Array(1, {targetOutputMatrix[0]}))
-            neuralNetwork.backpropagate(trainingInputMatrix, targetOutputMatrix, learningRate) // gradient descent to minimize cost through backpropagation
+            neuralNetwork.backpropagate(trainingInputMatrix, targetOutputMatrix, learningRate, weightDecay) // gradient descent to minimize cost through backpropagation
             timesSuccesfullyTrained++
         }
     }
