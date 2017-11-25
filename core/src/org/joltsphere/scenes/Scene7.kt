@@ -289,6 +289,9 @@ class Scene7(internal val game: JoltSphereMain) : Screen {
     fun moveLeft(dt: Float) { if (base.linearVelocity.x > -maxSpeed) base.setLinearVelocity(base.linearVelocity.x - 25*dt, 0f) }
     fun moveRight(dt: Float) { if (base.linearVelocity.x < maxSpeed) base.setLinearVelocity(base.linearVelocity.x + 25*dt, 0f) }
 
+    /** Rounds a value to float place */
+    fun Float.round(pos: Float): Float = Math.round(this*(1/pos))/Math.round(1f/pos).toF()
+
     override fun render(dt: Float) {
         update(dt)
         Gdx.gl.glClearColor(0f, 0f, 0f, 1f)
@@ -298,8 +301,8 @@ class Scene7(internal val game: JoltSphereMain) : Screen {
 
         game.shapeRender.setColor(0.1f,0.1f,0.1f,1f)
 
-        for (i in 0..3000) game.shapeRender.rect(i*game.width + backgroundOffset, 0f, game.width*(1/4f), game.height)
-        for (i in 0..3000) game.shapeRender.rect(-i*game.width + backgroundOffset - game.width, 0f, game.width*(1/4f), game.height)
+        for (i in 0..30000) game.shapeRender.rect(i*game.width + backgroundOffset, 0f, game.width*(1/4f), game.height)
+        for (i in 0..30000) game.shapeRender.rect(-i*game.width + backgroundOffset - game.width, 0f, game.width*(1/4f), game.height)
         //game.shapeRender.rect(0.5f*game.width + backgroundOffset, 0f, game.width*(1/4f), game.height)
         //game.shapeRender.rect(game.width + backgroundOffset, 0f, game.width*(1/4f), game.height)
         //game.shapeRender.rect(1.5f*game.width + backgroundOffset, 0f, game.width*(1/4f), game.height)
@@ -320,12 +323,15 @@ class Scene7(internal val game: JoltSphereMain) : Screen {
         debugRender.render(world, game.phys2DCam.combined)
 
         game.batch.begin()
-        game.font.draw(game.batch, "" + Gdx.graphics.framesPerSecond, game.width * 0.27f, game.height * 0.85f)
+        game.font.draw(game.batch, "" + Gdx.graphics.framesPerSecond, game.width * 0.27f, game.height - 50f)
         game.font.draw(game.batch, "" + orangeSlice, game.width * 0.5f, game.height * 0.5f)
         game.font.draw(game.batch, "R = " + Math.round(currentReward*1000f)/1000f, game.width * 0.1f, game.height * 0.1f)
         game.font.draw(game.batch, "R/S = " + Math.round(joint.jointSpeed*1000f)/1000f, game.width * 0.8f, game.height * 0.1f)
         game.font.draw(game.batch, "Current State $stateNum: ${sMatrix[stateNum][0]} ${sMatrix[stateNum][1]}", 20f, game.height - 110f)
         game.font.draw(game.batch, getTimePassed(), 70f, game.height/2f)
+        game.font.draw(game.batch,
+                "Q-Value Predictions: ${qMatrix[stateNum][0].round(0.1f)} ${qMatrix[stateNum][1].round(0.1f)} ${qMatrix[stateNum][2].round(0.1f)}",
+                20f, game.height - 300f)
         if (isFastForwarding) game.font.draw(game.batch, "Playback Rate: " + 2 * playbackSpeed, 20f, game.height - 50f)
 
         game.font.color = Color.GREEN

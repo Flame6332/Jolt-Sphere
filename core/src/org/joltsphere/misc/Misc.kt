@@ -237,14 +237,10 @@ fun printMatrix(matrix: Array<FloatArray>) {
     }
 }
 fun checkMatrixSizes(matrix1: Array<FloatArray>, matrix2: Array<FloatArray>) {
-    if (rows(matrix1) != rows(matrix2)) {
+    if (rows(matrix1) != rows(matrix2))
         throw IllegalArgumentException("${rows(matrix1)} rows of matrix#1 != ${rows(matrix2)} rows of matrix#2")
-        exitProcess(-1)
-    }
-    if (columns(matrix1) != columns(matrix2)) {
+    if (columns(matrix1) != columns(matrix2))
         throw IllegalArgumentException("${columns(matrix1)} columns of matrix#1 != ${columns(matrix2)} columns of matrix#2")
-        exitProcess(-1)
-    }
 }
 fun rows(matrix: Array<FloatArray>): Int = matrix.size
 fun columns(matrix: Array<FloatArray>): Int = matrix.first().size

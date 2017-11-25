@@ -38,13 +38,13 @@ class Scene10(internal val game: JoltSphereMain) : Screen {
 
     var isAutonomousEnabled = false
     val learningRate = 0.00007f
-    val weightDecay = 0.096f
+    val weightDecay = 0.0006f
     val discountFac = 0.95f
     var explorationProbability = 0.12f
-    val replayMemoryCapacity = 1 * 60 * 30
-    val minibatchSize = 10
+    val replayMemoryCapacity = 3 * 60 * 30
+    val minibatchSize = 20
     val explorationLength = 10
-    val hiddenLayerConfig = intArrayOf(20,20,10)
+    val hiddenLayerConfig = intArrayOf(30,20,10)
     val numberOfActions = 3
     val actionLength = 1/30f
     var timeLeftUntilNextAction = actionLength
@@ -54,7 +54,7 @@ class Scene10(internal val game: JoltSphereMain) : Screen {
     val aiKneeRear: DeepQLearner
     val aiKneeFront: DeepQLearner
 
-    var isLearningEnabled = true
+    var isExplorationEnabled = true
     var isOverwritingPreviousSave = false
     var isDebugging = false
     var isFastForwarding = false
@@ -218,17 +218,17 @@ class Scene10(internal val game: JoltSphereMain) : Screen {
 
         if (!isDebugging && Gdx.input.isKeyJustPressed(Keys.GRAVE)) {
             isDebugging = true
-            aiHipFront.isDebugging = true
-            aiHipRear.isDebugging = true
-            aiKneeFront.isDebugging = true
-            aiKneeRear.isDebugging = true
+            aiHipFront.isDebugEnabled = true
+            aiHipRear.isDebugEnabled = true
+            aiKneeFront.isDebugEnabled = true
+            aiKneeRear.isDebugEnabled = true
         }
         else if (Gdx.input.isKeyJustPressed(Keys.GRAVE)) {
             isDebugging = false
-            aiHipFront.isDebugging = false
-            aiHipRear.isDebugging = false
-            aiKneeFront.isDebugging = false
-            aiKneeRear.isDebugging = false
+            aiHipFront.isDebugEnabled = false
+            aiHipRear.isDebugEnabled = false
+            aiKneeFront.isDebugEnabled = false
+            aiKneeRear.isDebugEnabled = false
         }
         if (Gdx.input.isKeyJustPressed(Keys.RIGHT) && explorationProbability < 0.9f) explorationProbability += 0.1f
         else if (Gdx.input.isKeyJustPressed(Keys.LEFT) && explorationProbability > 0.1f) explorationProbability -= 0.1f
@@ -240,8 +240,8 @@ class Scene10(internal val game: JoltSphereMain) : Screen {
         if (!isFastForwarding) stepSimulation(dt)
         else for (i in 1..playbackSpeed) stepSimulation(1/30f)
 
-        if (isLearningEnabled && Gdx.input.isKeyJustPressed(Keys.E)) isLearningEnabled = false
-        else if (Gdx.input.isKeyJustPressed(Keys.E)) isLearningEnabled = true
+        if (isExplorationEnabled && Gdx.input.isKeyJustPressed(Keys.E)) isExplorationEnabled = false
+        else if (Gdx.input.isKeyJustPressed(Keys.E)) isExplorationEnabled = true
 
         writeTime += dt
     }
@@ -254,13 +254,12 @@ class Scene10(internal val game: JoltSphereMain) : Screen {
 
             if (isAutonomousEnabled) {
                 updateReward()
-                command(aiHipRear.updateStateAndRewardThenSelectAction(getCurrentState(), currentReward, isLearningEnabled, explorationProbability), jointHipRear)
-                command(aiHipFront.updateStateAndRewardThenSelectAction(getCurrentState(), currentReward, isLearningEnabled, explorationProbability), jointHipFront)
-                command(aiKneeRear.updateStateAndRewardThenSelectAction(getCurrentState(), currentReward, isLearningEnabled, explorationProbability), jointKneeRear)
-                command(aiKneeFront.updateStateAndRewardThenSelectAction(getCurrentState(), currentReward, isLearningEnabled, explorationProbability), jointKneeFront)
+                command(aiHipRear.updateStateAndRewardThenSelectAction(getCurrentState(), currentReward, isExplorationEnabled, explorationProbability), jointHipRear)
+                command(aiHipFront.updateStateAndRewardThenSelectAction(getCurrentState(), currentReward, isExplorationEnabled, explorationProbability), jointHipFront)
+                command(aiKneeRear.updateStateAndRewardThenSelectAction(getCurrentState(), currentReward, isExplorationEnabled, explorationProbability), jointKneeRear)
+                command(aiKneeFront.updateStateAndRewardThenSelectAction(getCurrentState(), currentReward, isExplorationEnabled, explorationProbability), jointKneeFront)
                 //printMatrix(Array(1, {getCurrentState()}))
-                if (isLearningEnabled) {
-                    for (i in 1..4) {
+                    for (i in 1..6) {
                         aiHipRear.trainFromReplayMemory(minibatchSize, learningRate, weightDecay, discountFac)
                         aiHipFront.trainFromReplayMemory(minibatchSize, learningRate, weightDecay, discountFac)
                         aiKneeRear.trainFromReplayMemory(minibatchSize, learningRate, weightDecay, discountFac)
@@ -277,7 +276,6 @@ class Scene10(internal val game: JoltSphereMain) : Screen {
                             println("Error saving file: ${e.localizedMessage}")
                         }
                         writeTime = 0f
-                    }
                     //println("END COST = " + cost)
                 }
             } else {
@@ -366,7 +364,7 @@ class Scene10(internal val game: JoltSphereMain) : Screen {
         return theta
     }
     fun updateReward() {
-        currentReward = 0.3f * Math.pow(torso.linearVelocity.x.toDouble(), 3.0).toF()
+        currentReward = 0.3f * torso.linearVelocity.x
         if (currentReward < 0) currentReward = 0f
         currentReward -= 0.5f // punishment for being idle
         val angle = reduceIntervalRadians(torso.angle).toDegrees()
@@ -386,9 +384,8 @@ class Scene10(internal val game: JoltSphereMain) : Screen {
         return minutes + ":" + seconds
     }
 
-    fun getActualPlaybackSpeed(): Float {
-        return Math.round(playbackSpeed * 2f * Gdx.graphics.framesPerSecond / 60f * 100f) / 100f
-    }
+    private fun getActualPlaybackSpeed(): Float = Math.round(playbackSpeed * 2f * Gdx.graphics.framesPerSecond / 60f * 100f) / 100f
+
 
     override fun render(dt: Float) {
         update(dt)
@@ -423,7 +420,7 @@ class Scene10(internal val game: JoltSphereMain) : Screen {
         game.font.color = Color.GREEN
         if (isOverwritingPreviousSave)
            game.font.draw(game.batch, "# SAVING DATA #", game.width - 750, game.height - 40)
-        if (isLearningEnabled) {
+        if (isExplorationEnabled) {
             game.font.draw(game.batch, "EXPLORATION LEARNING ENABLED", game.width - 1500f, game.height - 340f)
             game.font.draw(game.batch, "Exploration Probability: " + Math.round(explorationProbability * 100f) / 100f, game.width - 1400f, game.height - 420f)
         }

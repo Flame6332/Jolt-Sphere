@@ -29,7 +29,11 @@ class DeepQLearner(val numberOfStateInputs: Int, val numberOfActions: Int, val h
 
     var timesSuccesfullyTrained = 0
     var name = "Neural network"
-    var isDebugging = false
+    var isDebugEnabled = false
+    var latestQValuePredictions = FloatArray(numberOfActions)
+
+    var rewardMax = 0f // highest observed reward
+    var rewardMin = 0f // lowest observed reward
 
     /** Updates the state and reward for the Q-learner to save into it's transition matrix, then returns the optimal action '
      * based off highest quality predicted Q-value for the current state, with the chance of exploration, if enabled.
@@ -41,7 +45,10 @@ class DeepQLearner(val numberOfStateInputs: Int, val numberOfActions: Int, val h
      */
     fun updateStateAndRewardThenSelectAction(currentState: FloatArray, currentReward: Float, isExplorationEnabled: Boolean, explorationProbability: Float): Int {
         this.currentReward = currentReward
+        if (currentReward > rewardMax) rewardMax = currentReward
+        else if (currentReward < rewardMax) rewardMin = currentReward
         replayMemory.add(Transition(lastState, lastAction, currentReward, currentState)) // save transition for later
+        if (replayMemory.size > replayMemoryCapacity) replayMemory.removeAt(0)
         lastState = currentState // updates the last state for next loop around
 
         if (explorationTimer != 0) {
@@ -51,11 +58,20 @@ class DeepQLearner(val numberOfStateInputs: Int, val numberOfActions: Int, val h
         else if (isExplorationEnabled && Math.random() < explorationProbability) {
             lastAction = Misc.randomInt(0, numberOfActions - 1) // chooses random action
             explorationTimer = explorationLength
+            if (isDebugEnabled) {
+                val qValues = neuralNetwork.feedforward(currentState) // returns an array of Q-values in the current state
+                print("$name EXPLORATION Q-value predictions: "); printMatrix(Array(1, {qValues}))
+                println("Max Reward: $rewardMax     Min Reward: $rewardMin")
+            }
         }
         else {
             val qValues = neuralNetwork.feedforward(currentState) // returns an array of Q-values in the current state
             lastAction = qValues.indexOf(qValues.max()!!) // returns the action of the highest quality
-            if (isDebugging) { println("$name Q-value predictions: "); printMatrix(Array(1, {qValues})) }
+            latestQValuePredictions = qValues
+            if (isDebugEnabled) {
+                print("$name Q-value predictions: "); printMatrix(Array(1, {qValues}))
+                println("Max Reward: $rewardMax     Min Reward: $rewardMin")
+            }
             if (lastAction == -1) throw IllegalStateException("$name is outputting NaN garbage after $timesSuccesfullyTrained training passes")
         }
         return lastAction
@@ -94,7 +110,8 @@ class DeepQLearner(val numberOfStateInputs: Int, val numberOfActions: Int, val h
                 targetOutputMatrix[i] = feedforwardOutput // set the target outputs to the predicted output so all errors are equal to zero
                 //println("Transition: ${transition.state} ${transition.action} ${transition.reward} ${transition.resultingState}")
                 targetOutputMatrix[i][transition.action] = // except the action that we're optimizing for
-                        transition.reward + discountFactor * neuralNetwork.feedforward(transition.resultingState).max()!! // Bellman Equation: Q(s, a[i]) = r + γ * max<a’> Q(s’, a’)
+                        qValueRange(transition.reward + discountFactor * neuralNetwork.feedforward(transition.resultingState).max()!!) // Bellman Equation: Q(s, a[i]) = r + γ * max<a’> Q(s’, a’)
+                if (isDebugEnabled) println("Target Output: ${targetOutputMatrix[i][transition.action]}")
                 bagOfReplayMemory.removeAt(randomMemoryIndex) // takes the chosen training sample out of the bag
             }
             //println("Input: ")
@@ -105,6 +122,13 @@ class DeepQLearner(val numberOfStateInputs: Int, val numberOfActions: Int, val h
             timesSuccesfullyTrained++
         }
     }
+
+    fun qValueRange(qValueInput: Float): Float {
+        val rewardMultiplier = 20f
+        if (qValueInput > rewardMax*rewardMultiplier) return rewardMax*rewardMultiplier
+        else if (qValueInput < rewardMin*rewardMultiplier) return rewardMin*rewardMultiplier
+        else return qValueInput
+     }
 
     /** Stores data for < state, action, reward, and resulting state > transitions; used for replay memory. */
     class Transition(val state: FloatArray, val action: Int, val reward: Float, val resultingState: FloatArray)

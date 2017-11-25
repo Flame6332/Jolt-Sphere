@@ -1,10 +1,5 @@
 package org.joltsphere.misc
 
-import com.badlogic.gdx.Gdx
-import com.badlogic.gdx.files.FileHandle
-import com.badlogic.gdx.maps.tiled.TmxMapLoader
-import java.lang.IllegalStateException
-
 /** Creates a fully fleshed out ReLu regression neural network
  *  - Feedforward on command, backpropagate to reduce error.
  *

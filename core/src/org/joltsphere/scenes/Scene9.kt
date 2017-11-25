@@ -33,14 +33,14 @@ class Scene9(internal val game: JoltSphereMain) : Screen {
     internal var joint: RevoluteJoint
 
     var isAutonomousEnabled = false
-    val learningRate = 0.007f
-    val weightDecay = 0.096f
+    val learningRate = 0.00001f
+    val weightDecay = 0.00032f
     val discountFac = 0.95f
-    var explorationProbability = 0.12f
-    val replayMemoryCapacity = 1 * 60 * 30
-    val minibatchSize = 10
-    val explorationLength = 10
-    val hiddenLayerConfig = intArrayOf(6,6)
+    var explorationProbability = 0.05f
+    val replayMemoryCapacity = 10 * 30
+    val minibatchSize = 20
+    val explorationLength = 2
+    val hiddenLayerConfig = intArrayOf(10,10,10)
     val numberOfActions = 3
     val actionLength = 1/30f
     var timeLeftUntilNextAction = actionLength
@@ -53,7 +53,6 @@ class Scene9(internal val game: JoltSphereMain) : Screen {
     var actualAngle = 0f
 
     var isExplorationEnabled = true
-    var didJustExplore = false
     var isFastForwarding = false
     var playbackSpeed = 1
     var secondsPassed = 0f
@@ -94,11 +93,12 @@ class Scene9(internal val game: JoltSphereMain) : Screen {
 
         stick.applyLinearImpulse(Vector2(-10f, 0f), stick.localCenter, true)
 
-        aiController = DeepQLearner(getCurrentState().size, 3, hiddenLayerConfig, replayMemoryCapacity, explorationLength)
-
+        aiController = DeepQLearner(getCurrentState().size, numberOfActions, hiddenLayerConfig, replayMemoryCapacity, explorationLength)
+        aiController.name = "THE ULTIMATE STICK BALANCER"
+        aiController.isDebugEnabled = true
     }
 
-    fun getCurrentState(): FloatArray = floatArrayOf(reduceIntervalRadians(joint.jointAngle), joint.jointSpeed)
+    fun getCurrentState(): FloatArray = floatArrayOf(reduceIntervalRadians(joint.jointAngle)-Math.PI.toF(), joint.jointSpeed, base.linearVelocity.x)
     fun reduceIntervalRadians(ang: Float): Float {
         var theta = ang
         while (theta < 0) theta += 2f * Math.PI.toF()
@@ -123,6 +123,9 @@ class Scene9(internal val game: JoltSphereMain) : Screen {
         if (isExplorationEnabled && Gdx.input.isKeyJustPressed(Keys.E)) isExplorationEnabled = false
         else if (Gdx.input.isKeyJustPressed(Keys.E)) isExplorationEnabled = true
 
+        if (aiController.isDebugEnabled && Gdx.input.isKeyJustPressed(Keys.SLASH)) aiController.isDebugEnabled = false
+        else if (Gdx.input.isKeyJustPressed(Keys.SLASH)) aiController.isDebugEnabled = true
+
     }
 
     fun stepSimulation(dt: Float) {
@@ -133,7 +136,16 @@ class Scene9(internal val game: JoltSphereMain) : Screen {
             updateReward()
 
             if (isAutonomousEnabled) {
-                
+                val action = aiController.updateStateAndRewardThenSelectAction(
+                        getCurrentState(), currentReward, isExplorationEnabled, explorationProbability)
+                when (action) {
+                    0 -> commandNothing(dt)
+                    1 -> commandLeft(dt)
+                    2 -> commandRight(dt)
+                }
+                for (i in 1..13) {
+                    aiController.trainFromReplayMemory(minibatchSize, learningRate, weightDecay, discountFac)
+                }
             } else {
                 if (Gdx.input.isKeyPressed(Keys.LEFT)) commandLeft(dt)
                 else if (Gdx.input.isKeyPressed(Keys.RIGHT)) commandRight(dt)
@@ -159,6 +171,7 @@ class Scene9(internal val game: JoltSphereMain) : Screen {
         if (horizontalStickSide == -1) currentReward = (180f - actualAngle) / 180f
         else if (horizontalStickSide == 1) currentReward = (actualAngle - 180f) / 180f
         currentReward = currentReward * 2 - 1
+        if (currentReward > 0) currentReward *= 0.1f
         //currentReward = 0f
         if (actualAngle < 3 || actualAngle > 357) currentReward += 5
         if (actualAngle < 180 + 13 && actualAngle > 347 - 180) currentReward -= 4
@@ -171,6 +184,8 @@ class Scene9(internal val game: JoltSphereMain) : Screen {
         if (seconds.length == 1) seconds = "0" + seconds
         return minutes + ":" + seconds
     }
+    /** Returns the actual playback speed of the simulation */
+    private fun getActualPlaybackSpeed(): Float = Math.round(playbackSpeed * 2f * Gdx.graphics.framesPerSecond / 60f * 100f) / 100f
     fun commandLeft(dt: Float) {
         moveLeft(dt)
     }
@@ -190,6 +205,9 @@ class Scene9(internal val game: JoltSphereMain) : Screen {
     fun moveLeft(dt: Float) { if (base.linearVelocity.x > -maxSpeed) base.setLinearVelocity(base.linearVelocity.x - 25*dt, 0f) }
     fun moveRight(dt: Float) { if (base.linearVelocity.x < maxSpeed) base.setLinearVelocity(base.linearVelocity.x + 25*dt, 0f) }
 
+    /** Rounds a value to float place */
+    fun Float.round(pos: Float): Float = Math.round(this*(1/pos))/Math.round(1f/pos).toF()
+
     override fun render(dt: Float) {
         update(dt)
         Gdx.gl.glClearColor(0f, 0f, 0f, 1f)
@@ -199,8 +217,8 @@ class Scene9(internal val game: JoltSphereMain) : Screen {
 
         game.shapeRender.setColor(0.1f,0.1f,0.1f,1f)
 
-        for (i in 0..3000) game.shapeRender.rect(i*game.width + backgroundOffset, 0f, game.width*(1/4f), game.height)
-        for (i in 0..3000) game.shapeRender.rect(-i*game.width + backgroundOffset - game.width, 0f, game.width*(1/4f), game.height)
+        for (i in 0..30000) game.shapeRender.rect(i*game.width + backgroundOffset, 0f, game.width*(1/4f), game.height)
+        for (i in 0..30000) game.shapeRender.rect(-i*game.width + backgroundOffset - game.width, 0f, game.width*(1/4f), game.height)
 
         game.shapeRender.color = Color.FIREBRICK
         /*val hyp = 900f
@@ -221,15 +239,17 @@ class Scene9(internal val game: JoltSphereMain) : Screen {
         game.font.draw(game.batch, "" + Gdx.graphics.framesPerSecond, game.width * 0.27f, game.height * 0.85f)
         game.font.draw(game.batch, "R = " + Math.round(currentReward*1000f)/1000f, game.width * 0.1f, game.height * 0.1f)
         game.font.draw(game.batch, "R/S = " + Math.round(joint.jointSpeed*1000f)/1000f, game.width * 0.8f, game.height * 0.1f)
-        game.font.draw(game.batch, "Current State: ${getCurrentState()[0]} ${getCurrentState()[1]}", 20f, game.height - 110f)
+        game.font.draw(game.batch,
+            "Current State: ${getCurrentState()[0].round(0.1f)} ${getCurrentState()[1].round(0.1f)}", 20f, game.height - 110f)
+        game.font.draw(game.batch,
+            "Q-Value Predictions: ${aiController.latestQValuePredictions[0].round(0.1f)} ${aiController.latestQValuePredictions[1].round(0.1f)} ${aiController.latestQValuePredictions[2].round(0.1f)}",
+                20f, game.height - 300f)
         game.font.draw(game.batch, getTimePassed(), 70f, game.height/2f)
-        if (isFastForwarding) game.font.draw(game.batch, "Playback Rate: " + 2 * playbackSpeed, 20f, game.height - 50f)
+        if (isFastForwarding) game.font.draw(game.batch, "Playback Rate: ${2f*playbackSpeed} (${getActualPlaybackSpeed()})" , 20f, game.height - 50f)
 
         game.font.color = Color.GREEN
         if (isExplorationEnabled)
             game.font.draw(game.batch, "EXPLORING OPPORTUNITIES", game.width - 1300f, game.height - 180f)
-        if (didJustExplore)
-            game.font.draw(game.batch, "JUST EXPLORED", game.width - 1200f, game.height - 250f)
         game.font.color = Color.WHITE
 
         game.batch.end()
