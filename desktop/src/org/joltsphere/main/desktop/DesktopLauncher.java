@@ -1,32 +1,27 @@
 package org.joltsphere.main.desktop;
 
+import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
+import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
 import org.joltsphere.main.JoltSphereMain;
-
-import com.badlogic.gdx.backends.lwjgl.LwjglApplication;
-import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
 
 public class DesktopLauncher {
 
-    static LwjglApplicationConfiguration config;
+    static Lwjgl3ApplicationConfiguration config;
 
-    public static void main (String[] arg) {
-        config = new LwjglApplicationConfiguration();
+    public static void main(String[] arg) {
+        config = new Lwjgl3ApplicationConfiguration();
 
-        config.x = 0;
-        config.y = 0;
+        config.setWindowedMode(JoltSphereMain.Companion.getWIDTH(), JoltSphereMain.Companion.getHEIGHT());
 
-        config.width = JoltSphereMain.Companion.getWIDTH();
-        config.height = JoltSphereMain.Companion.getHEIGHT();
-
-        new LwjglApplication(new JoltSphereMain() {
+        new Lwjgl3Application(new JoltSphereMain(), config);
+        /*new Lwjgl3Application(new JoltSphereMain() {
             @Override
             protected void setFPSLimit(int value) {
                 config.foregroundFPS = value;
                 config.backgroundFPS = value;
             }
         }, config);
-
+*/
     }
 
 }
-

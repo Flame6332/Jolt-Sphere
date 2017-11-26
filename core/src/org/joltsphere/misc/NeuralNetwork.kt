@@ -1,5 +1,9 @@
 package org.joltsphere.misc
 
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer
+import com.badlogic.gdx.math.Vector2
+import java.text.FieldPosition
+
 /** Creates a fully fleshed out ReLu regression neural network
  *  - Feedforward on command, backpropagate to reduce error.
  *
@@ -12,6 +16,7 @@ class NeuralNetwork(val numberOfInputs: Int, val numberOfOutputs: Int, val hidde
     var cost = 0f
     val numberOfHiddenLayers = hiddenLayerConfiguration.size
     val networkSynapses: Array<Array<FloatArray>>
+    lateinit var neuralView: NeuralViewer
 
     init {
         val layerSizes = IntArray(2+numberOfHiddenLayers)
@@ -20,7 +25,7 @@ class NeuralNetwork(val numberOfInputs: Int, val numberOfOutputs: Int, val hidde
         for (i in 1 until layerSizes.size-1) layerSizes[i] = hiddenLayerConfiguration[i-1] // for each of the hidden layers, set the layer size to the number of hidden layer neurons
 
         networkSynapses = Array(layerSizes.size-1, // create a weight matrix for every layer of the neural network except the output
-                { i -> (randomMatrix(layerSizes[i]+1,layerSizes[i+1])).multiply(0.1f)/*.multiply(2f).subtract(1f)*/ })
+                { i -> (randomMatrix(layerSizes[i]+1,layerSizes[i+1])).multiply(2f).subtract(1f) })
                 // the matrix size is equal to (layer size + a bias weight) X (layer size of the next layer); creates a random matrix *2 -1 to put all values from -1 to 1
     }
 
@@ -165,6 +170,37 @@ class NeuralNetwork(val numberOfInputs: Int, val numberOfOutputs: Int, val hidde
                 if (x[i][j] > 0) output[i][j] = 1f
                 else output[i][j] = leakyReLuSlope
         return output
+    }
+
+    inner class NeuralViewer(width: Float, height: Float, size: Float) {
+        var dimensions = Vector2(width, height)
+        var size = size
+
+        fun configureProperties(width: Float, height: Float, size: Float) {
+            dimensions = Vector2(width, height)
+            this.size = size
+        }
+
+        fun renderWeights(shapeRenderer: ShapeRenderer, position: Vector2) {
+
+        }
+
+        fun renderFeedforward(shapeRenderer: ShapeRenderer, position: Vector2) {
+
+        }
+
+        fun renderFeedforwardStep(shapeRenderer: ShapeRenderer, position: Vector2, isStep: Boolean) {
+
+        }
+
+        fun renderFeedforwardStepWithSynapses(shapeRenderer: ShapeRenderer, position: Vector2, isStep: Boolean) {
+
+        }
+
+        fun renderGrayNetwork(shapeRenderer: ShapeRenderer, position: Vector2) {
+            
+        }
+
     }
 
 }

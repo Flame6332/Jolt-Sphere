@@ -33,8 +33,8 @@ class Scene9(internal val game: JoltSphereMain) : Screen {
     internal var joint: RevoluteJoint
 
     var isAutonomousEnabled = false
-    val learningRate = 0.00001f
-    val weightDecay = 0.00032f
+    val learningRate = 0.000001f
+    val weightDecay = 0.00001f
     val discountFac = 0.95f
     var explorationProbability = 0.05f
     val replayMemoryCapacity = 10 * 30
@@ -143,7 +143,7 @@ class Scene9(internal val game: JoltSphereMain) : Screen {
                     1 -> commandLeft(dt)
                     2 -> commandRight(dt)
                 }
-                for (i in 1..13) {
+                for (i in 1..3) {
                     aiController.trainFromReplayMemory(minibatchSize, learningRate, weightDecay, discountFac)
                 }
             } else {
@@ -172,9 +172,10 @@ class Scene9(internal val game: JoltSphereMain) : Screen {
         else if (horizontalStickSide == 1) currentReward = (actualAngle - 180f) / 180f
         currentReward = currentReward * 2 - 1
         if (currentReward > 0) currentReward *= 0.1f
+        else currentReward = -0.1f
         //currentReward = 0f
         if (actualAngle < 3 || actualAngle > 357) currentReward += 5
-        if (actualAngle < 180 + 13 && actualAngle > 347 - 180) currentReward -= 4
+        //if (actualAngle < 180 + 13 && actualAngle > 347 - 180) currentReward -= 4
         //if (currentReward < 0) currentReward = -0.2f
     }
 
