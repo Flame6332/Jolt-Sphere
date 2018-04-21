@@ -83,8 +83,9 @@ object DL4JTest2 {
                         .weightInit(WeightInit.DISTRIBUTION).dist(UniformDistribution(0.0,1.0))
                         .build())
                 .layer(1, OutputLayer.Builder(LossFunctions.LossFunction.SQUARED_LOSS)
-                        .activation("relu")
-                        .nIn(2).nOut(2).build())
+                        .activation(Activation.SOFTMAX)
+                        .weightInit(WeightInit.DISTRIBUTION).dist(UniformDistribution(0.0,1.0))
+                        .nIn(4).nOut(2).build())
                 .backprop(true).pretrain(false)
                 .build();
 
