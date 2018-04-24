@@ -79,6 +79,7 @@ object DL4JTest {
         builder.useDropConnect(false)
         // a standard algorithm for moving on the error-plane, this one works best for me,
         // LINE_GRADIENT DESCENT or CONJUGATE_GRADIENT can do the job, too - it's an empirical
+        // LINE_GRADIENT DESCENT or CONJUGATE_GRADIENT can do the job, too - it's an empirical
         // value which one matches best to your problem
         builder.optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
         //initialize bias with empirical value 0
@@ -90,7 +91,7 @@ object DL4JTest {
         // the mini batch size
         builder.miniBatch(false)
 
-        // create a multilayer network with 2 layers (includiing the output layer,
+        // create a multilayer network with 2 layers (including the output layer,
         // excluding the input layer
         val listBuilder = builder.list()
 
@@ -98,7 +99,7 @@ object DL4JTest {
         // 2 input connections - simultaneously defines the number of input neurons, because
         // it's the first non-input layer
         hiddenLayerBuilder.nIn(2)
-        // number of outgoing connections, nOut simulteanously defines the number
+        // number of outgoing connections, nOut simultaneously defines the number
         // of neurons in this layer
         hiddenLayerBuilder.nOut(4)
         // put the output through the sigmmoid function, to cap the output
@@ -166,6 +167,10 @@ object DL4JTest {
         val eval = Evaluation(2)
         eval.eval(ds.labels, output)
         println(eval.stats())
+
+        // create output for everything training sample
+        val output2: INDArray = net.output(input)
+        println(output2)
 
     }
 }

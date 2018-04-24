@@ -13,13 +13,16 @@
 
 package org.joltsphere.misc
 
+import org.deeplearning4j.eval.Evaluation
 import org.deeplearning4j.nn.api.OptimizationAlgorithm
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration
 import org.deeplearning4j.nn.conf.distribution.UniformDistribution
 import org.deeplearning4j.nn.conf.layers.DenseLayer
 import org.deeplearning4j.nn.conf.layers.OutputLayer
+import org.deeplearning4j.nn.multilayer.MultiLayerNetwork
 import org.deeplearning4j.nn.weights.WeightInit
+import org.deeplearning4j.optimize.listeners.ScoreIterationListener
 import org.nd4j.linalg.activations.Activation
 import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.dataset.DataSet
@@ -36,7 +39,7 @@ object DL4JTest2 {
 
         // corresponding list with expected output values, 4 training samples
         // with data  for 2 output neurons each
-        val labels: INDArray = Nd4j.zeros(4,2)
+        val labels: INDArray = Nd4j.zeros(4,1)
         // create the first data-set
         // when first input=0 and second input=0
         input.putScalar(intArrayOf(0, 0), 0)
@@ -53,16 +56,12 @@ object DL4JTest2 {
 
 
         labels.putScalar(intArrayOf(0, 0), 1)
-        labels.putScalar(intArrayOf(0, 1), 0)
 
         labels.putScalar(intArrayOf(1, 0), 0)
-        labels.putScalar(intArrayOf(1, 1), 1)
 
         labels.putScalar(intArrayOf(2, 0), 0)
-        labels.putScalar(intArrayOf(2, 1), 1)
 
         labels.putScalar(intArrayOf(3, 0), 1)
-        labels.putScalar(intArrayOf(3, 1), 0)
 
         // dataset object
         val ds: DataSet = DataSet(input, labels)
@@ -77,18 +76,29 @@ object DL4JTest2 {
                 .miniBatch(false)
                 .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
                 .biasInit(0.0)
-                .regularization(true).l2(0.001)
+                //.regularization(true).l2(0.001)
                 .list()
                 .layer(0, DenseLayer.Builder().nIn(2).nOut(4).activation(Activation.LEAKYRELU)
                         .weightInit(WeightInit.DISTRIBUTION).dist(UniformDistribution(0.0,1.0))
                         .build())
-                .layer(1, OutputLayer.Builder(LossFunctions.LossFunction.SQUARED_LOSS)
+                .layer(1, OutputLayer.Builder(LossFunctions.LossFunction.NEGATIVELOGLIKELIHOOD)
                         .activation(Activation.SOFTMAX)
                         .weightInit(WeightInit.DISTRIBUTION).dist(UniformDistribution(0.0,1.0))
                         .nIn(4).nOut(2).build())
                 .backprop(true).pretrain(false)
                 .build();
 
+        val net: MultiLayerNetwork = MultiLayerNetwork(conf)
+        net.init()
+        net.setListeners(ScoreIterationListener(300))
+        net.fit(ds)
+
+        val output: INDArray = net.output(ds.featureMatrix)
+        println(output)
+
+        val eval = Evaluation(2)
+        eval.eval(ds.labels, output)
+        println(eval.stats())
 
     }
 
