@@ -39,7 +39,7 @@ object DL4JTest2 {
 
         // corresponding list with expected output values, 4 training samples
         // with data  for 2 output neurons each
-        val labels: INDArray = Nd4j.zeros(4,1)
+        val labels: INDArray = Nd4j.zeros(4,2)
         // create the first data-set
         // when first input=0 and second input=0
         input.putScalar(intArrayOf(0, 0), 0)
@@ -56,12 +56,16 @@ object DL4JTest2 {
 
 
         labels.putScalar(intArrayOf(0, 0), 1)
+        labels.putScalar(intArrayOf(0, 1), 0)
 
         labels.putScalar(intArrayOf(1, 0), 0)
+        labels.putScalar(intArrayOf(1, 1), 1)
 
         labels.putScalar(intArrayOf(2, 0), 0)
+        labels.putScalar(intArrayOf(2, 1), 1)
 
         labels.putScalar(intArrayOf(3, 0), 1)
+        labels.putScalar(intArrayOf(3, 1), 0)
 
         // dataset object
         val ds: DataSet = DataSet(input, labels)
@@ -99,6 +103,8 @@ object DL4JTest2 {
         val eval = Evaluation(2)
         eval.eval(ds.labels, output)
         println(eval.stats())
+
+        println(labels)
 
     }
 
