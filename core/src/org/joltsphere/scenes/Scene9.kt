@@ -35,12 +35,12 @@ class Scene9(internal val game: JoltSphereMain) : Screen {
     var isAutonomousEnabled = false
     val learningRate = 0.000001f
     val weightDecay = 0.00001f
-    val discountFac = 0.95f
-    var explorationProbability = 0.05f
+    val discountFac = 0.98f
+    var explorationProbability = 0.005f
     val replayMemoryCapacity = 10 * 30
-    val minibatchSize = 20
+    val minibatchSize = 16
     val explorationLength = 2
-    val hiddenLayerConfig = intArrayOf(10,10,10)
+    val hiddenLayerConfig = intArrayOf(5,5)
     val numberOfActions = 3
     val actionLength = 1/30f
     var timeLeftUntilNextAction = actionLength
@@ -93,7 +93,8 @@ class Scene9(internal val game: JoltSphereMain) : Screen {
 
         stick.applyLinearImpulse(Vector2(-10f, 0f), stick.localCenter, true)
 
-        aiController = DeepQLearner(getCurrentState().size, numberOfActions, hiddenLayerConfig, replayMemoryCapacity, explorationLength)
+        aiController = DeepQLearner(getCurrentState().size, numberOfActions, hiddenLayerConfig, replayMemoryCapacity,
+                0f, 2f, 1,3, 0.03f, 4)
         aiController.name = "THE ULTIMATE STICK BALANCER"
         aiController.isDebugEnabled = true
     }
@@ -137,13 +138,13 @@ class Scene9(internal val game: JoltSphereMain) : Screen {
 
             if (isAutonomousEnabled) {
                 val action = aiController.updateStateAndRewardThenSelectAction(
-                        getCurrentState(), currentReward, isExplorationEnabled, explorationProbability)
+                        getCurrentState(), currentReward, isExplorationEnabled)
                 when (action) {
                     0 -> commandNothing(dt)
                     1 -> commandLeft(dt)
                     2 -> commandRight(dt)
                 }
-                for (i in 1..3) {
+                for (i in 1..1) {
                     aiController.trainFromReplayMemory(minibatchSize, learningRate, weightDecay, discountFac)
                 }
             } else {
@@ -249,8 +250,10 @@ class Scene9(internal val game: JoltSphereMain) : Screen {
         if (isFastForwarding) game.font.draw(game.batch, "Playback Rate: ${2f*playbackSpeed} (${getActualPlaybackSpeed()})" , 20f, game.height - 50f)
 
         game.font.color = Color.GREEN
-        if (isExplorationEnabled)
+        if (isExplorationEnabled) {
             game.font.draw(game.batch, "EXPLORING OPPORTUNITIES", game.width - 1300f, game.height - 180f)
+            if (aiController.isExploring) game.font.draw(game.batch, "RANDOM EXPLORATION!!!", game.width - 1400f, game.height - 280f)
+        }
         game.font.color = Color.WHITE
 
         game.batch.end()

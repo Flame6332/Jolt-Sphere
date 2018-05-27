@@ -74,7 +74,7 @@ object DL4JTest2 {
 
         val conf: MultiLayerConfiguration = NeuralNetConfiguration.Builder()
                 .seed(123)
-                .iterations(2000)
+                .iterations(1)
                 .learningRate(0.01)
                 .useDropConnect(false)
                 .miniBatch(false)
@@ -85,8 +85,8 @@ object DL4JTest2 {
                 .layer(0, DenseLayer.Builder().nIn(2).nOut(4).activation(Activation.LEAKYRELU)
                         .weightInit(WeightInit.DISTRIBUTION).dist(UniformDistribution(0.0,1.0))
                         .build())
-                .layer(1, OutputLayer.Builder(LossFunctions.LossFunction.NEGATIVELOGLIKELIHOOD)
-                        .activation(Activation.SOFTMAX)
+                .layer(1, OutputLayer.Builder(LossFunctions.LossFunction.SQUARED_LOSS)
+                        .activation(Activation.IDENTITY)
                         .weightInit(WeightInit.DISTRIBUTION).dist(UniformDistribution(0.0,1.0))
                         .nIn(4).nOut(2).build())
                 .backprop(true).pretrain(false)
@@ -95,16 +95,23 @@ object DL4JTest2 {
         val net: MultiLayerNetwork = MultiLayerNetwork(conf)
         net.init()
         net.setListeners(ScoreIterationListener(300))
-        net.fit(ds)
+        for (i in 1 .. 1000) net.fit(input, labels)
 
         val output: INDArray = net.output(ds.featureMatrix)
         println(output)
+        println(net.output(input))
+        //val eval = Evaluation(2)
+        //eval.eval(ds.labels, output)
+        //println(eval.stats())
 
-        val eval = Evaluation(2)
-        eval.eval(ds.labels, output)
-        println(eval.stats())
+        //println(labels)
 
-        println(labels)
+        val sampleInput: INDArray = Nd4j.zeros(1,2)
+        sampleInput.putScalar(intArrayOf(0,0), 0)
+        sampleInput.putScalar(intArrayOf(0,1), 5)
+        println(sampleInput)
+        println(net.output(sampleInput))
+        println(floatArrayOf(0.8f, 2.3f).toINDArray().toFloatArray().toINDArray())
 
     }
 

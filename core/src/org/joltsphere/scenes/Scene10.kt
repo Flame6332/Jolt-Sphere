@@ -164,10 +164,10 @@ class Scene10(internal val game: JoltSphereMain) : Screen {
         jointKneeRear.setLimits(5f.toRadians(), 175f.toRadians())
         jointKneeFront.setLimits(5f.toRadians(), 175f.toRadians())
 
-        aiHipRear = DeepQLearner(getCurrentState().size, numberOfActions, hiddenLayerConfig, replayMemoryCapacity, explorationLength)
-        aiHipFront = DeepQLearner(getCurrentState().size, numberOfActions, hiddenLayerConfig, replayMemoryCapacity, explorationLength)
-        aiKneeRear = DeepQLearner(getCurrentState().size, numberOfActions, hiddenLayerConfig, replayMemoryCapacity, explorationLength)
-        aiKneeFront = DeepQLearner(getCurrentState().size, numberOfActions, hiddenLayerConfig, replayMemoryCapacity, explorationLength)
+        aiHipRear = DeepQLearner(getCurrentState().size, numberOfActions, hiddenLayerConfig, replayMemoryCapacity, 0f,0f,1,1,0f,1)
+        aiHipFront = DeepQLearner(getCurrentState().size, numberOfActions, hiddenLayerConfig, replayMemoryCapacity,  0f,0f,1,1,0f,1)
+        aiKneeRear = DeepQLearner(getCurrentState().size, numberOfActions, hiddenLayerConfig, replayMemoryCapacity,  0f,0f,1,1,0f,1)
+        aiKneeFront = DeepQLearner(getCurrentState().size, numberOfActions, hiddenLayerConfig, replayMemoryCapacity,  0f,0f,1,1,0f,1)
         aiHipRear.name = "Hip-rear"
         aiHipFront.name = "Hip-front"
         aiKneeRear.name = "Knee-rear"
@@ -206,12 +206,12 @@ class Scene10(internal val game: JoltSphereMain) : Screen {
             else isOverwritingPreviousSave = true
         }
 
-        if (Gdx.input.isKeyJustPressed(Keys.PLUS)) {
+        /*if (Gdx.input.isKeyJustPressed(Keys.PLUS)) {
             aiHipFront.neuralNetwork.loadSaveState(Gdx.files.local("testing/neural_nets/ai_hip_front.txt").readString())
             aiHipRear.neuralNetwork.loadSaveState(Gdx.files.local("testing/neural_nets/ai_hip_rear.txt").readString())
             aiKneeFront.neuralNetwork.loadSaveState(Gdx.files.local("testing/neural_nets/ai_knee_front.txt").readString())
             aiKneeRear.neuralNetwork.loadSaveState(Gdx.files.local("testing/neural_nets/ai_knee_rear.txt").readString())
-        }
+        }*/
 
         if (!isFastForwarding && Gdx.input.isKeyJustPressed(Keys.T)) isFastForwarding = true
         else if (Gdx.input.isKeyJustPressed(Keys.T)) isFastForwarding = false
@@ -254,10 +254,10 @@ class Scene10(internal val game: JoltSphereMain) : Screen {
 
             if (isAutonomousEnabled) {
                 updateReward()
-                command(aiHipRear.updateStateAndRewardThenSelectAction(getCurrentState(), currentReward, isExplorationEnabled, explorationProbability), jointHipRear)
-                command(aiHipFront.updateStateAndRewardThenSelectAction(getCurrentState(), currentReward, isExplorationEnabled, explorationProbability), jointHipFront)
-                command(aiKneeRear.updateStateAndRewardThenSelectAction(getCurrentState(), currentReward, isExplorationEnabled, explorationProbability), jointKneeRear)
-                command(aiKneeFront.updateStateAndRewardThenSelectAction(getCurrentState(), currentReward, isExplorationEnabled, explorationProbability), jointKneeFront)
+                command(aiHipRear.updateStateAndRewardThenSelectAction(getCurrentState(), currentReward, isExplorationEnabled), jointHipRear)
+                command(aiHipFront.updateStateAndRewardThenSelectAction(getCurrentState(), currentReward, isExplorationEnabled), jointHipFront)
+                command(aiKneeRear.updateStateAndRewardThenSelectAction(getCurrentState(), currentReward, isExplorationEnabled), jointKneeRear)
+                command(aiKneeFront.updateStateAndRewardThenSelectAction(getCurrentState(), currentReward, isExplorationEnabled), jointKneeFront)
                 //printMatrix(Array(1, {getCurrentState()}))
                     for (i in 1..6) {
                         aiHipRear.trainFromReplayMemory(minibatchSize, learningRate, weightDecay, discountFac)
@@ -265,14 +265,14 @@ class Scene10(internal val game: JoltSphereMain) : Screen {
                         aiKneeRear.trainFromReplayMemory(minibatchSize, learningRate, weightDecay, discountFac)
                         aiKneeFront.trainFromReplayMemory(minibatchSize, learningRate, weightDecay, discountFac)
                     }
-                    cost = (aiHipFront.neuralNetwork.cost + aiHipRear.neuralNetwork.cost + aiKneeFront.neuralNetwork.cost + aiKneeRear.neuralNetwork.cost) / 4f
+                    cost = -1f //(aiHipFront.neuralNetwork.cost + aiHipRear.neuralNetwork.cost + aiKneeFront.neuralNetwork.cost + aiKneeRear.neuralNetwork.cost) / 4f
                     if (isOverwritingPreviousSave && writeTime > 3f) {
                         try {
-                            Gdx.files.local("testing/neural_nets/ai_hip_front.txt").writeString(aiHipFront.neuralNetwork.getSaveState(), false)
+                            /*Gdx.files.local("testing/neural_nets/ai_hip_front.txt").writeString(aiHipFront.neuralNetwork.getSaveState(), false)
                             Gdx.files.local("testing/neural_nets/ai_hip_rear.txt").writeString(aiHipRear.neuralNetwork.getSaveState(), false)
                             Gdx.files.local("testing/neural_nets/ai_knee_front.txt").writeString(aiKneeFront.neuralNetwork.getSaveState(), false)
                             Gdx.files.local("testing/neural_nets/ai_knee_rear.txt").writeString(aiKneeRear.neuralNetwork.getSaveState(), false)
-                        } catch (e: Exception) {
+                        */} catch (e: Exception) {
                             println("Error saving file: ${e.localizedMessage}")
                         }
                         writeTime = 0f

@@ -15,25 +15,28 @@ package org.joltsphere.misc
  *  information.
  * @param explorationProbability A decimal probability of exploration taking place if it is enabled. This value should be kept relatively low, '
  *  below around 0.1
- * @param explorationLength How many timesteps the explored move will be repeated.
+ * //@param explorationLength How many timesteps the explored move will be repeated.
  */
 class DeepQLearner(val numberOfStateInputs: Int, val numberOfActions: Int, val hiddenLayerConfiguration: IntArray,
-                   val replayMemoryCapacity: Int, val explorationLength: Int) {
+                   val replayMemoryCapacity: Int,
+                   var rewardMin: Float, var rewardMax: Float,
+                   val expLengthMin: Int, val expLenghtMax: Int, val expProbMin: Float, expComboMax: Int) {
 
-    val neuralNetwork = NeuralNetwork(numberOfStateInputs, numberOfActions, hiddenLayerConfiguration)
+    val neuralNetwork = DL4JNeuralNetwork(numberOfStateInputs, numberOfActions, hiddenLayerConfiguration)
     val replayMemory = ArrayList<Transition>()
     private var lastState = FloatArray(numberOfStateInputs)
     private var lastAction = 0
     var currentReward = 0f
     var explorationTimer = 0
+    var isExploring = false
 
     var timesSuccesfullyTrained = 0
     var name = "Neural network"
     var isDebugEnabled = false
     var latestQValuePredictions = FloatArray(numberOfActions)
 
-    var rewardMax = 0f // highest observed reward
-    var rewardMin = 0f // lowest observed reward
+    //var rewardMax = 0f // highest observed reward
+    //var rewardMin = 0f // lowest observed reward
 
     /** Updates the state and reward for the Q-learner to save into it's transition matrix, then returns the optimal action '
      * based off highest quality predicted Q-value for the current state, with the chance of exploration, if enabled.
@@ -43,10 +46,10 @@ class DeepQLearner(val numberOfStateInputs: Int, val numberOfActions: Int, val h
      * @param isExplorationEnabled If true, there's a previously set chance of exploration, which is required to find an optimal state.
      * @return An action value for the current state.
      */
-    fun updateStateAndRewardThenSelectAction(currentState: FloatArray, currentReward: Float, isExplorationEnabled: Boolean, explorationProbability: Float): Int {
+    fun updateStateAndRewardThenSelectAction(currentState: FloatArray, currentReward: Float, isExplorationEnabled: Boolean): Int {
         this.currentReward = currentReward
         if (currentReward > rewardMax) rewardMax = currentReward
-        else if (currentReward < rewardMax) rewardMin = currentReward
+        else if (currentReward < rewardMin) rewardMin = currentReward
         replayMemory.add(Transition(lastState, lastAction, currentReward, currentState)) // save transition for later
         if (replayMemory.size > replayMemoryCapacity) replayMemory.removeAt(0)
         lastState = currentState // updates the last state for next loop around
@@ -55,22 +58,24 @@ class DeepQLearner(val numberOfStateInputs: Int, val numberOfActions: Int, val h
             explorationTimer--
             // last action stays the same until exploration is over
         }
-        else if (isExplorationEnabled && Math.random() < explorationProbability) {
+        else if (isExplorationEnabled && Math.random() < expProbMin) {
             lastAction = Misc.randomInt(0, numberOfActions - 1) // chooses random action
-            explorationTimer = explorationLength
-            if (isDebugEnabled) {
+            explorationTimer = Misc.randomInt(expLengthMin, expLenghtMax)
+            isExploring = true
+            /*if (isDebugEnabled) {
                 val qValues = neuralNetwork.feedforward(currentState) // returns an array of Q-values in the current state
                 print("$name EXPLORATION Q-value predictions: "); printMatrix(Array(1, {qValues}))
                 println("Max Reward: $rewardMax     Min Reward: $rewardMin")
-            }
+            }*/
         }
         else {
             val qValues = neuralNetwork.feedforward(currentState) // returns an array of Q-values in the current state
             lastAction = qValues.indexOf(qValues.max()!!) // returns the action of the highest quality
             latestQValuePredictions = qValues
+            isExploring = false
             if (isDebugEnabled) {
-                print("$name Q-value predictions: "); printMatrix(Array(1, {qValues}))
-                println("Max Reward: $rewardMax     Min Reward: $rewardMin")
+                //print("$name Q-value predictions: "); printMatrix(Array(1, {qValues}))
+                //println("Max Reward: $rewardMax     Min Reward: $rewardMin")
             }
             if (lastAction == -1) throw IllegalStateException("$name is outputting NaN garbage after $timesSuccesfullyTrained training passes")
         }
@@ -110,7 +115,7 @@ class DeepQLearner(val numberOfStateInputs: Int, val numberOfActions: Int, val h
                 targetOutputMatrix[i] = feedforwardOutput // set the target outputs to the predicted output so all errors are equal to zero
                 //println("Transition: ${transition.state} ${transition.action} ${transition.reward} ${transition.resultingState}")
                 targetOutputMatrix[i][transition.action] = // except the action that we're optimizing for
-                        qValueRange(transition.reward + discountFactor * neuralNetwork.feedforward(transition.resultingState).max()!!) // Bellman Equation: Q(s, a[i]) = r + γ * max<a’> Q(s’, a’)
+                        transition.reward + discountFactor * neuralNetwork.feedforward(transition.resultingState).max()!! // Bellman Equation: Q(s, a[i]) = r + γ * max<a’> Q(s’, a’)
                 if (isDebugEnabled) println("Target Output: ${targetOutputMatrix[i][transition.action]}")
                 bagOfReplayMemory.removeAt(randomMemoryIndex) // takes the chosen training sample out of the bag
             }
@@ -118,7 +123,8 @@ class DeepQLearner(val numberOfStateInputs: Int, val numberOfActions: Int, val h
             //printMatrix(Array(1, {trainingInputMatrix[0]}))
             //println("Output: ")
             //printMatrix(Array(1, {targetOutputMatrix[0]}))
-            neuralNetwork.backpropagate(trainingInputMatrix, targetOutputMatrix, learningRate, weightDecay) // gradient descent to minimize cost through backpropagation
+            neuralNetwork.backpropagate(trainingInputMatrix, targetOutputMatrix) // gradient descent to minimize cost through backpropagation
+            println(targetOutputMatrix.toINDArray())
             timesSuccesfullyTrained++
         }
     }
