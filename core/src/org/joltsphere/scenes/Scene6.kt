@@ -1,6 +1,7 @@
 /* 10/29/2017 - Yousef Abdelgaber
 *
-*   This is my first attempt at making a Q-reinforcement learning algorithim. It's based off of the classic reinforcement learning problem, "Grid World".
+*   This is my first attempt at making a Q-reinforcement learning algorithm. It's based off of
+*   the classic reinforcement learning problem, "Grid World".
 *
  */
 

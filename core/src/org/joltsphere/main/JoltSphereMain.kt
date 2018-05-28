@@ -129,10 +129,14 @@ open class JoltSphereMain : Game() {
             }
             9 -> {
                 this.setScreen(Scene9(this))
-                subtitle = "Advanced Stick Balancing with DEEP-Q-LEARNING!!!"
+                subtitle = "Deep-Q Learning Grid World Analysis"
             }
             10 -> {
                 this.setScreen(Scene10(this))
+                subtitle = "Advanced Stick Balancing with DEEP-Q-LEARNING!!!"
+            }
+            11 -> {
+                this.setScreen(Scene11(this))
                 subtitle = "Simulated Creatures Attempt #2: DEEP-Q-Learner"
             }
             else -> {

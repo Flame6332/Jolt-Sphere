@@ -20,7 +20,7 @@ package org.joltsphere.misc
 class DeepQLearner(val numberOfStateInputs: Int, val numberOfActions: Int, val hiddenLayerConfiguration: IntArray,
                    val replayMemoryCapacity: Int,
                    var rewardMin: Float, var rewardMax: Float,
-                   val expLengthMin: Int, val expLenghtMax: Int, val expProbMin: Float, expComboMax: Int) {
+                   val expLengthMin: Int, val expLengthMax: Int, val expProbMin: Float, expComboMax: Int) {
 
     val neuralNetwork = DL4JNeuralNetwork(numberOfStateInputs, numberOfActions, hiddenLayerConfiguration)
     val replayMemory = ArrayList<Transition>()
@@ -34,6 +34,10 @@ class DeepQLearner(val numberOfStateInputs: Int, val numberOfActions: Int, val h
     var name = "Neural network"
     var isDebugEnabled = false
     var latestQValuePredictions = FloatArray(numberOfActions)
+
+    init {
+        if (expLengthMin < 1) throw IllegalArgumentException("Boy, who you playing? Minimum exploration length must be at least 1, not $expLengthMin!")
+    }
 
     //var rewardMax = 0f // highest observed reward
     //var rewardMin = 0f // lowest observed reward
@@ -60,7 +64,7 @@ class DeepQLearner(val numberOfStateInputs: Int, val numberOfActions: Int, val h
         }
         else if (isExplorationEnabled && Math.random() < expProbMin) {
             lastAction = Misc.randomInt(0, numberOfActions - 1) // chooses random action
-            explorationTimer = Misc.randomInt(expLengthMin, expLenghtMax)
+            explorationTimer = Misc.randomInt(expLengthMin, expLengthMax)
             isExploring = true
             /*if (isDebugEnabled) {
                 val qValues = neuralNetwork.feedforward(currentState) // returns an array of Q-values in the current state

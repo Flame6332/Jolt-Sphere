@@ -1,3 +1,12 @@
+/* 5/23/18 - Yousef Abdelgaber
+*
+*   So, somehow, all of a sudden I casually implemented the DL4J library after a bit of testing here and there. I guess it all
+*   just suddenly clicked and I perfectly implemented replacements for all of the old functions and simply implemented a much better neural
+*   network into the code. And, while it needs some tuning in a grid world for regularization and learning rate, along with a better
+*   exploration system, but I am very happy to begin progress again!
+*
+ */
+
 package org.joltsphere.misc
 
 import org.deeplearning4j.nn.api.OptimizationAlgorithm
