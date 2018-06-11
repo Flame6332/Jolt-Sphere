@@ -33,10 +33,10 @@ class DL4JNeuralNetwork(val numberOfInputs: Int, val numberOfOutputs: Int, val h
         builder.iterations(1)
         builder.seed(1234)
         builder.optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
-        builder.biasInit(0.0)
+        builder.biasInit(0.01)
         builder.miniBatch(false)
-        builder.learningRate = 0.000001
-        builder.regularization(true).l2(0.00001).dropOut(0.5)
+        builder.learningRate = 0.0002
+        builder.regularization(false)//.l2(0.0000001)//.dropOut(0.5)
 
         // neural network layer comp
         val listBuilder = builder.list()
@@ -45,7 +45,7 @@ class DL4JNeuralNetwork(val numberOfInputs: Int, val numberOfOutputs: Int, val h
         hiddenLayerBuilder.activation(Activation.LEAKYRELU)
         // random initialize weights with values between 0 and 1
         hiddenLayerBuilder.weightInit(WeightInit.DISTRIBUTION)
-        hiddenLayerBuilder.dist(UniformDistribution(0.0,1.0))
+        hiddenLayerBuilder.dist(UniformDistribution(-0.1,0.1))
 
         // first hidden layer
         hiddenLayerBuilder.nIn(numberOfInputs)
@@ -63,7 +63,7 @@ class DL4JNeuralNetwork(val numberOfInputs: Int, val numberOfOutputs: Int, val h
         outputLayerBuilder.nOut(numberOfOutputs)
         outputLayerBuilder.activation(Activation.IDENTITY)
         outputLayerBuilder.weightInit(WeightInit.DISTRIBUTION)
-        outputLayerBuilder.dist(UniformDistribution(0.0,1.0))
+        outputLayerBuilder.dist(UniformDistribution(-0.1,0.1))
         listBuilder.layer(hiddenLayerConfiguration.size, outputLayerBuilder.build())
 
         listBuilder.pretrain(false)

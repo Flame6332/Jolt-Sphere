@@ -46,12 +46,19 @@ class Scene9(internal val game: JoltSphereMain) : Screen {
     val rewardPerTarget = 1f
     val rewardPerDeath = -1f
 
+    var isExploring = true
+    var isLive = false
+    val minibatchSize = 12
+    val learningRate = -1f
+
+    val UP = 0; val RIGHT = 1; val DOWN = 2; val LEFT = 3;
+
     init {
 
-        aiController = DeepQLearner(2, 4, intArrayOf(5,5),
-                12,
+        aiController = DeepQLearner(2, 4, intArrayOf(512,512),
+                30,
                 -1f, 1f,
-                1, 1, 0.15f, 2)
+                1, 1, 0.2f, 4)
 
         aiController.name = "Bob from Grid World"
         aiController.isDebugEnabled = true
@@ -111,7 +118,7 @@ class Scene9(internal val game: JoltSphereMain) : Screen {
         var isObstacle = false
         var isDeadly = false
         var isTarget = false
-        fun isSpecial(): Boolean = isDeadly || isTarget
+        fun isTerminal(): Boolean = isDeadly || isTarget
 
         var canMoveUp = true
         var canMoveDown = true
@@ -122,6 +129,7 @@ class Scene9(internal val game: JoltSphereMain) : Screen {
     inner class Player(val initialCol: Int, val initialRow: Int) {
         var row = initialRow
         var col = initialCol
+
         fun resetPlayer() {
             row = initialRow
             col = initialCol
@@ -136,38 +144,52 @@ class Scene9(internal val game: JoltSphereMain) : Screen {
         fun saveCurrentTile() { previousTile.set(col.toFloat(), row.toFloat()) }
         fun getPreviousTile() = tileMap[previousTile.x.round()][previousTile.y.round()]
 
-        fun attemptToTranslate(dir: String) {
+        fun attemptToTranslate(dir: Int) {
             when {
-                dir == "up" -> if (currentTile().canMoveUp) row++
-                dir == "down" -> if (currentTile().canMoveDown) row--
-                dir == "left" -> if (currentTile().canMoveLeft) col--
-                dir == "right" -> if (currentTile().canMoveRight) col++
+                dir == UP -> if (currentTile().canMoveUp) row++
+                dir == DOWN -> if (currentTile().canMoveDown) row--
+                dir == LEFT -> if (currentTile().canMoveLeft) col--
+                dir == RIGHT -> if (currentTile().canMoveRight) col++
             }
         }
 
-        // move, and if normmal tile,
+        /*// move, and if normmal tile,
         fun moveUp() {
-            if (!currentTile().isSpecial()) { saveCurrentTile(); attemptToTranslate("up"); updateQValue("up") }
+            if (!currentTile().isSpecial()) { saveCurrentTile(); attemptToTranslate("up") }
             else terminate() }
         fun moveDown() {
-            if (!currentTile().isSpecial()) { saveCurrentTile(); attemptToTranslate("down"); updateQValue("down") }
+            if (!currentTile().isSpecial()) { saveCurrentTile(); attemptToTranslate("down") }
             else terminate() }
         fun moveLeft() {
-            if (!currentTile().isSpecial()) { saveCurrentTile(); attemptToTranslate("left"); updateQValue("left") }
+            if (!currentTile().isSpecial()) { saveCurrentTile(); attemptToTranslate("left") }
             else terminate() }
         fun moveRight() {
-            if (!currentTile().isSpecial()) { saveCurrentTile(); attemptToTranslate("right"); updateQValue("right") }
+            if (!currentTile().isSpecial()) { saveCurrentTile(); attemptToTranslate("right") }
             else terminate() }
-        fun moveOptimally()  {
-            val optimalDir = currentTile().optimalDirection()
-            when {
-                optimalDir.y == 1f -> moveUp()
-                optimalDir.y == -1f -> moveDown()
-                optimalDir.x == 1f -> moveRight()
-                optimalDir.x == -1f -> moveLeft()
-            }
+        fun moveIntelligently()  {
+
+        }*/
+        fun userMove(dir: Int) {
+            aiController.actionSelectedExternally(dir)
+            updateEnvironmentAndAgent()
         }
-        fun updateQValue(dir: String) {
+        fun updateEnvironmentAndAgent() {
+            var reward = rewardPerMove
+            if (currentTile().isTarget) reward = rewardPerTarget
+            else if (currentTile().isDeadly) reward = rewardPerDeath
+            if (currentTile().isTerminal()) {
+                aiController.updateStateAndRewardThenSelectAction(floatArrayOf(row.toF(), col.toF()), reward, true, isExploring)
+                terminate()
+            }
+            else
+                attemptToTranslate(
+                        aiController.updateStateAndRewardThenSelectAction(floatArrayOf(row.toF(), col.toF()), reward, false, isExploring))
+            aiController.trainFromReplayMemory(minibatchSize, learningRate, 1f)
+        }
+        fun terminate() {
+            resetPlayer()
+        }
+        /*fun updateQValue(dir: String) {
             var prevQ = 0f
             when (dir) {
                 "up" -> prevQ = getPreviousTile().upQ
@@ -183,25 +205,30 @@ class Scene9(internal val game: JoltSphereMain) : Screen {
                 "left" -> getPreviousTile().leftQ += deltaQ
                 "right" -> getPreviousTile().rightQ += deltaQ
             }
-        }
-        fun terminate() {
+        }*/
+        /*fun terminate() {
             var reward = 0f
             if (currentTile().isDeadly) reward = rewardPerDeath
             else if (currentTile().isTarget) reward = rewardPerTarget
             val deltaQ: Float = learnRate * (reward + discountFac * currentTile().onlyQ) // termination Q function
             currentTile().onlyQ = deltaQ
             resetPlayer()
-        }
+        }*/
     }
 
     internal fun update(dt: Float) {
+        if (Gdx.input.isKeyJustPressed(Keys.UP)) player.userMove(UP)
+        else if (Gdx.input.isKeyJustPressed(Keys.DOWN)) player.userMove(DOWN)
+        else if (Gdx.input.isKeyJustPressed(Keys.LEFT)) player.userMove(LEFT)
+        else if (Gdx.input.isKeyJustPressed(Keys.RIGHT)) player.userMove(RIGHT)
+        else if (isLive) player.updateEnvironmentAndAgent()
+        else if (Gdx.input.isKeyJustPressed(Keys.Z)) player.updateEnvironmentAndAgent()
 
-        if (Gdx.input.isKeyJustPressed(Keys.UP)) player.moveUp()
-        if (Gdx.input.isKeyJustPressed(Keys.DOWN)) player.moveDown()
-        if (Gdx.input.isKeyJustPressed(Keys.LEFT)) player.moveLeft()
-        if (Gdx.input.isKeyJustPressed(Keys.RIGHT)) player.moveRight()
-        if (Gdx.input.isKeyJustPressed(Keys.Z)) player.moveOptimally()
-        else if (Gdx.input.isKeyPressed(Keys.Q)) player.moveOptimally()
+        if (Gdx.input.isKeyJustPressed(Keys.Q) && !isLive) isLive = true
+        else if (Gdx.input.isKeyJustPressed(Keys.Q)) isLive = false
+
+        if (Gdx.input.isKeyJustPressed(Keys.SPACE) && !isExploring) isExploring = true
+        else if (Gdx.input.isKeyJustPressed(Keys.SPACE)) isExploring = false
 
     }
 
@@ -239,7 +266,8 @@ class Scene9(internal val game: JoltSphereMain) : Screen {
             }
         }
 
-        game.shapeRender.color = Color.GOLDENROD
+        if (isExploring) game.shapeRender.color = Color.SKY
+        else game.shapeRender.color = Color.GOLDENROD
         for (i in 0..columnCount) game.shapeRender.rectLine(tileW*i, 0f, tileW*i, tileH*rowCount, lineWidth) // Column lines
         for (i in 0..rowCount) game.shapeRender.rectLine(0f, tileH*i, tileW*columnCount, tileH*i, lineWidth) // Row line
         for (i in 0 until rowCount) game.shapeRender.rectLine(0f, tileH*i, (rowCount-i)*tileW, game.height, lineWidth) // Left-wall positive slope diagonal lines
@@ -247,7 +275,8 @@ class Scene9(internal val game: JoltSphereMain) : Screen {
         for (i in 1..rowCount) game.shapeRender.rectLine(0f, tileH*i, i*tileW, 0f, lineWidth) // Left-wall negative slope diagonal lines
         for (i in 1 until columnCount) game.shapeRender.rectLine(tileW*i, game.height, game.width, (rowCount-(columnCount-i))*tileH, lineWidth) // Top negative slope diagonal lines
 
-        game.shapeRender.color = Color.TEAL
+        if (aiController.isExploring) game.shapeRender.color = Color.YELLOW
+        else game.shapeRender.color = Color.TEAL
         game.shapeRender.circle(player.x(), player.y(), 90f)
 
         game.shapeRender.end()
@@ -263,15 +292,16 @@ class Scene9(internal val game: JoltSphereMain) : Screen {
             for (y in 0 until tileMap.first().size){
                 when {
                     tileMap[x][y].isObstacle -> {
-                        // TODO add necessary joke about about Mexicans
+                        // something about walls
                     }
-                    tileMap[x][y].isTarget -> game.font.draw(game.batch, "" + Math.round(tileMap[x][y].onlyQ*100f)/100f, tileW*x +20f, tileH*(y+1)-20f)
-                    tileMap[x][y].isDeadly -> game.font.draw(game.batch, "" + Math.round(tileMap[x][y].onlyQ*100f)/100f, tileW*x +20f, tileH*(y+1)-20f)
+                    //tileMap[x][y].isTarget -> game.font.draw(game.batch, "" + Math.round(tileMap[x][y].onlyQ*100f)/100f, tileW*x +20f, tileH*(y+1)-20f)
+                    //tileMap[x][y].isDeadly -> game.font.draw(game.batch, "" + Math.round(tileMap[x][y].onlyQ*100f)/100f, tileW*x +20f, tileH*(y+1)-20f)
                     else -> {
-                        game.font.draw(game.batch, "" + Math.round(tileMap[x][y].upQ * 100f) / 100f, tileW * x + tileW / 2f + centerOffset, tileH * (y + 1) - 30)
-                        game.font.draw(game.batch, "" + Math.round(tileMap[x][y].downQ * 100f) / 100f, tileW * x + tileW / 2f + centerOffset, tileH * y + 65f)
-                        game.font.draw(game.batch, "" + Math.round(tileMap[x][y].leftQ * 100f) / 100f, tileW * x + 23, tileH * y + tileH / 2f + vertOffset)
-                        game.font.draw(game.batch, "" + Math.round(tileMap[x][y].rightQ * 100f) / 100f, tileW * x + 0.73f * tileW, tileH * y + tileH / 2f - vertOffset)
+                        val output = aiController.neuralNetwork.feedforward(floatArrayOf(y.toF(),x.toF())) // TODO fix this huge waste in computing power as it won't scale properly
+                        game.font.draw(game.batch, "U " + Math.round(output[UP] * 100f) / 100f, tileW * x + tileW / 2f + centerOffset, tileH * (y + 1) - 30) // up\
+                        game.font.draw(game.batch, "R " + Math.round(output[RIGHT] * 100f) / 100f, tileW * x + 0.73f * tileW, tileH * y + tileH / 2f - vertOffset)
+                        game.font.draw(game.batch, "D " + Math.round(output[DOWN] * 100f) / 100f, tileW * x + tileW / 2f + centerOffset, tileH * y + 65f)
+                        game.font.draw(game.batch, "L " + Math.round(output[LEFT] * 100f) / 100f, tileW * x + 23, tileH * y + tileH / 2f + vertOffset)
                     }
                 }
             }

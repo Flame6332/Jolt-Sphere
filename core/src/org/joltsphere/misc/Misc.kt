@@ -254,6 +254,7 @@ fun Float.multiply(matrix: Array<FloatArray>): Array<FloatArray> = scalarMultipl
 fun Float.divide(matrix: Array<FloatArray>): Array<FloatArray> = scalarDivide(this, matrix)
 fun Array<FloatArray>.power(scalar: Float): Array<FloatArray> = scalarExponent(this, scalar)
 fun Float.power(matrix: Array<FloatArray>): Array<FloatArray> = scalarExponent(this, matrix)
+fun Float.abs(): Float = Math.abs(this)
 
 fun Array<FloatArray>.add(matrix: Array<FloatArray>): Array<FloatArray> = dotAdd(this, matrix)
 fun Array<FloatArray>.subtract(matrix: Array<FloatArray>): Array<FloatArray> = dotSubtract(this, matrix)

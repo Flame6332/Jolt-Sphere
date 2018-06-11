@@ -136,16 +136,17 @@ class Scene10(internal val game: JoltSphereMain) : Screen {
 
             updateReward()
 
+
             if (isAutonomousEnabled) {
                 val action = aiController.updateStateAndRewardThenSelectAction(
-                        getCurrentState(), currentReward, isExplorationEnabled)
+                        getCurrentState(), currentReward, false, isExplorationEnabled)
                 when (action) {
                     0 -> commandNothing(dt)
                     1 -> commandLeft(dt)
                     2 -> commandRight(dt)
                 }
                 for (i in 1..1) {
-                    aiController.trainFromReplayMemory(minibatchSize, learningRate, weightDecay, discountFac)
+                    aiController.trainFromReplayMemory(minibatchSize, learningRate, discountFac)
                 }
             } else {
                 if (Gdx.input.isKeyPressed(Keys.LEFT)) commandLeft(dt)

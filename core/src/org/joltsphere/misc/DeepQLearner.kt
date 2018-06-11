@@ -15,7 +15,7 @@ package org.joltsphere.misc
  *  information.
  * @param explorationProbability A decimal probability of exploration taking place if it is enabled. This value should be kept relatively low, '
  *  below around 0.1
- * //@param explorationLength How many timesteps the explored move will be repeated.
+ * //@param explorationLength How many time-steps the explored move will be repeated.
  */
 class DeepQLearner(val numberOfStateInputs: Int, val numberOfActions: Int, val hiddenLayerConfiguration: IntArray,
                    val replayMemoryCapacity: Int,
@@ -28,12 +28,16 @@ class DeepQLearner(val numberOfStateInputs: Int, val numberOfActions: Int, val h
     private var lastAction = 0
     var currentReward = 0f
     var explorationTimer = 0
+    var expComboCount = 0
     var isExploring = false
 
     var timesSuccesfullyTrained = 0
     var name = "Neural network"
     var isDebugEnabled = false
     var latestQValuePredictions = FloatArray(numberOfActions)
+
+    var lastExternalAction: Int = 0
+    var isNextActionExternal = false
 
     init {
         if (expLengthMin < 1) throw IllegalArgumentException("Boy, who you playing? Minimum exploration length must be at least 1, not $expLengthMin!")
@@ -50,19 +54,29 @@ class DeepQLearner(val numberOfStateInputs: Int, val numberOfActions: Int, val h
      * @param isExplorationEnabled If true, there's a previously set chance of exploration, which is required to find an optimal state.
      * @return An action value for the current state.
      */
-    fun updateStateAndRewardThenSelectAction(currentState: FloatArray, currentReward: Float, isExplorationEnabled: Boolean): Int {
+    fun updateStateAndRewardThenSelectAction(currentState: FloatArray, currentReward: Float, isTerminalState: Boolean, isExplorationEnabled: Boolean): Int {
         this.currentReward = currentReward
         if (currentReward > rewardMax) rewardMax = currentReward
         else if (currentReward < rewardMin) rewardMin = currentReward
-        replayMemory.add(Transition(lastState, lastAction, currentReward, currentState)) // save transition for later
+        if (isTerminalState) // if is terminal state
+            replayMemory.add(Transition(lastState, lastAction, currentReward, currentState, true)) // save termination for later
+        else // save normal state transition for later
+            replayMemory.add(Transition(lastState, lastAction, currentReward, currentState, false))
         if (replayMemory.size > replayMemoryCapacity) replayMemory.removeAt(0)
         lastState = currentState // updates the last state for next loop around
 
-        if (explorationTimer != 0) {
+        if (isTerminalState) {
+            explorationTimer == 0
+        }
+        else if (isNextActionExternal) {
+            lastAction = lastExternalAction
+            isNextActionExternal = false // resets external action system
+        }
+        else if (explorationTimer != 0) {
             explorationTimer--
             // last action stays the same until exploration is over
         }
-        else if (isExplorationEnabled && Math.random() < expProbMin) {
+        else if (isExplorationEnabled && Math.random() < optimalExplorationProbability()) {
             lastAction = Misc.randomInt(0, numberOfActions - 1) // chooses random action
             explorationTimer = Misc.randomInt(expLengthMin, expLengthMax)
             isExploring = true
@@ -86,6 +100,15 @@ class DeepQLearner(val numberOfStateInputs: Int, val numberOfActions: Int, val h
         return lastAction
     }
 
+    fun actionSelectedExternally(action: Int) {
+        isNextActionExternal = true
+        lastExternalAction = action
+    }
+
+    fun optimalExplorationProbability(): Float { // TODO actually make this function work with varying probability, including a combo spike of probability
+        return expProbMin
+    }
+
     /** Increases the accuracy of the neural network Q-function through the randomized collection of training samples from the '
      * replay memory, using temporal difference on each sampled transition to find target Q-values, then the stochastic gradient descent of '
      * the neural network through backpropagation.
@@ -95,11 +118,9 @@ class DeepQLearner(val numberOfStateInputs: Int, val numberOfActions: Int, val h
      *  itself, then the program will throw an error.
      * @param learningRate The learning rate of the neural network. Set this around maybe 0.03, set it too high, and the model will be inaccurate, '
      *  set it too low, and the model will take to long to converge.
-     * @param weightDecay The generalization factor of the network, set this too high and the network will over generalize and under-fit the data. '
-     *  Set this value too low, and the network explodes with huge weight values that fry the network. Around 0.1 is a good starting point.
      * @param discountFactor The model's focus on long term reward versus short term reward. Set this between 0 and 1, but it's best around 0.9 and above.
      */
-    fun trainFromReplayMemory(minibatchSize: Int, learningRate: Float, weightDecay: Float, discountFactor: Float) {
+    fun trainFromReplayMemory(minibatchSize: Int, learningRate: Float, discountFactor: Float) {
         if (minibatchSize > replayMemoryCapacity) // make sure training will even take place
             throw IllegalArgumentException("silly boy, the minibatch size $minibatchSize > $replayMemoryCapacity replay memory capacity")
         if (minibatchSize <= replayMemory.size) { // if enough training data has been acquired to satisfy a minibatch training sequence
@@ -110,17 +131,30 @@ class DeepQLearner(val numberOfStateInputs: Int, val numberOfActions: Int, val h
 
             for (i in 0 until trainingInputMatrix.size) { // fills all the values of the input and output matrix with a state and target value
                 var randomMemoryIndex = Misc.randomInt(0, bagOfReplayMemory.size-1) // chooses a random index from the remaining options of the memory
-                while (bagOfReplayMemory[randomMemoryIndex].action == -1) {
-                    randomMemoryIndex = Misc.randomInt(0, bagOfReplayMemory.size-1)
+                    //while (bagOfReplayMemory[randomMemoryIndex].action == -1) { // discards of failures
+                    //    randomMemoryIndex = Misc.randomInt(0, bagOfReplayMemory.size-1)
+                    //}
+
+                if (i < 0.25f * minibatchSize) { // a slice of training data isn't random, instead focuses on large rewards and punishments
+                    var mostSignificantIndex = 0
+                    for (j in 0 until bagOfReplayMemory.size)
+                        if (bagOfReplayMemory[j].reward.abs() > bagOfReplayMemory[mostSignificantIndex].reward.abs()) // if new index has greater reward
+                            mostSignificantIndex = j // update the new index
+                    randomMemoryIndex = mostSignificantIndex // no loner random
                 }
+
                 val transition = bagOfReplayMemory[randomMemoryIndex]
+
                 trainingInputMatrix[i] = transition.state.copyOf() // sets a row of inputs of the training matrix to a value out of the replay memory
                 val feedforwardOutput = neuralNetwork.feedforward(trainingInputMatrix[i])
-                targetOutputMatrix[i] = feedforwardOutput // set the target outputs to the predicted output so all errors are equal to zero
+                targetOutputMatrix[i] = feedforwardOutput // set the target outputs to the predicted outeput so all errors are equal to zero
                 //println("Transition: ${transition.state} ${transition.action} ${transition.reward} ${transition.resultingState}")
-                targetOutputMatrix[i][transition.action] = // except the action that we're optimizing for
+                if (transition.isTerminal)
+                    targetOutputMatrix[i][transition.action] = transition.reward
+                else
+                    targetOutputMatrix[i][transition.action] = // except the action that we're optimizing for
                         transition.reward + discountFactor * neuralNetwork.feedforward(transition.resultingState).max()!! // Bellman Equation: Q(s, a[i]) = r + γ * max<a’> Q(s’, a’)
-                if (isDebugEnabled) println("Target Output: ${targetOutputMatrix[i][transition.action]}")
+                //if (isDebugEnabled) println("Target Output: ${targetOutputMatrix[i][transition.action]}")
                 bagOfReplayMemory.removeAt(randomMemoryIndex) // takes the chosen training sample out of the bag
             }
             //println("Input: ")
@@ -128,20 +162,13 @@ class DeepQLearner(val numberOfStateInputs: Int, val numberOfActions: Int, val h
             //println("Output: ")
             //printMatrix(Array(1, {targetOutputMatrix[0]}))
             neuralNetwork.backpropagate(trainingInputMatrix, targetOutputMatrix) // gradient descent to minimize cost through backpropagation
-            println(targetOutputMatrix.toINDArray())
+                    //println(targetOutputMatrix.toINDArray())
             timesSuccesfullyTrained++
         }
     }
 
-    fun qValueRange(qValueInput: Float): Float {
-        val rewardMultiplier = 20f
-        if (qValueInput > rewardMax*rewardMultiplier) return rewardMax*rewardMultiplier
-        else if (qValueInput < rewardMin*rewardMultiplier) return rewardMin*rewardMultiplier
-        else return qValueInput
-     }
-
     /** Stores data for < state, action, reward, and resulting state > transitions; used for replay memory. */
-    class Transition(val state: FloatArray, val action: Int, val reward: Float, val resultingState: FloatArray)
+    class Transition(val state: FloatArray, val action: Int, val reward: Float, val resultingState: FloatArray, val isTerminal: Boolean)
 
 }
 

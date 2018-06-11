@@ -23,8 +23,10 @@ class Scene6(internal val game: JoltSphereMain) : Screen {
 
     //val tileColor1: Color = Color.DARK_GRAY
     //val tileColor2: Color = Color.BLACK
-    val tileW = game.width/16f
-    val tileH = game.height/9f
+    //val tileW = game.width/16f
+    val tileW = game.width/4f
+    //val tileH = game.height/9f
+    val tileH = game.height/3f
 
     val rowCount = (game.height/tileH).toInt()
     val columnCount = (game.width/tileW).toInt()
@@ -40,7 +42,7 @@ class Scene6(internal val game: JoltSphereMain) : Screen {
     val rewardPerDeath = -1f
 
     init {
-        createTile2()
+        createTiles1()
 
         for (i in 0 until columnCount) {
             tileMap[i][0].canMoveDown = false
