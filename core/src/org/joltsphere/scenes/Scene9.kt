@@ -41,7 +41,7 @@ class Scene9(internal val game: JoltSphereMain) : Screen {
 
     val aiController: DeepQLearner
 
-    val discountFac = 1f
+    val discountFac = 0.99f
     val rewardPerMove = -0.04f
     val rewardPerTarget = 1f
     val rewardPerDeath = -1f
@@ -56,7 +56,7 @@ class Scene9(internal val game: JoltSphereMain) : Screen {
     init {
 
         aiController = DeepQLearner(2, 4, intArrayOf(512,512),
-                30,
+                30, 0.0002f,
                 -1f, 1f,
                 1, 1, 0.2f, 4)
 
@@ -184,7 +184,7 @@ class Scene9(internal val game: JoltSphereMain) : Screen {
             else
                 attemptToTranslate(
                         aiController.updateStateAndRewardThenSelectAction(floatArrayOf(row.toF(), col.toF()), reward, false, isExploring))
-            aiController.trainFromReplayMemory(minibatchSize, learningRate, 1f)
+            aiController.trainFromReplayMemory(minibatchSize, 1f)
         }
         fun terminate() {
             resetPlayer()
@@ -294,8 +294,8 @@ class Scene9(internal val game: JoltSphereMain) : Screen {
                     tileMap[x][y].isObstacle -> {
                         // something about walls
                     }
-                    //tileMap[x][y].isTarget -> game.font.draw(game.batch, "" + Math.round(tileMap[x][y].onlyQ*100f)/100f, tileW*x +20f, tileH*(y+1)-20f)
-                    //tileMap[x][y].isDeadly -> game.font.draw(game.batch, "" + Math.round(tileMap[x][y].onlyQ*100f)/100f, tileW*x +20f, tileH*(y+1)-20f)
+                    tileMap[x][y].isTarget -> game.font.draw(game.batch, "TARGET (NIRVANA)", tileW*x +20f, tileH*(y+1)-20f)
+                    tileMap[x][y].isDeadly -> game.font.draw(game.batch, "" + aiController.explorationTimer, tileW*x +20f, tileH*(y+1)-20f)
                     else -> {
                         val output = aiController.neuralNetwork.feedforward(floatArrayOf(y.toF(),x.toF())) // TODO fix this huge waste in computing power as it won't scale properly
                         game.font.draw(game.batch, "U " + Math.round(output[UP] * 100f) / 100f, tileW * x + tileW / 2f + centerOffset, tileH * (y + 1) - 30) // up\

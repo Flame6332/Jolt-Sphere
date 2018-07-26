@@ -31,16 +31,15 @@ class Scene10(internal val game: JoltSphereMain) : Screen {
     internal var base: Body
     internal var stick: Body
     internal var joint: RevoluteJoint
+    val maxSpeed = 30f
 
     var isAutonomousEnabled = false
     val learningRate = 0.000001f
-    val weightDecay = 0.00001f
     val discountFac = 0.98f
-    var explorationProbability = 0.005f
     val replayMemoryCapacity = 10 * 30
     val minibatchSize = 16
     val explorationLength = 2
-    val hiddenLayerConfig = intArrayOf(5,5)
+    val hiddenLayerConfig = intArrayOf(700,700)
     val numberOfActions = 3
     val actionLength = 1/30f
     var timeLeftUntilNextAction = actionLength
@@ -93,13 +92,13 @@ class Scene10(internal val game: JoltSphereMain) : Screen {
 
         stick.applyLinearImpulse(Vector2(-10f, 0f), stick.localCenter, true)
 
-        aiController = DeepQLearner(getCurrentState().size, numberOfActions, hiddenLayerConfig, replayMemoryCapacity,
-                0f, 2f, 1,3, 0.03f, 4)
+        aiController = DeepQLearner(getCurrentState().size, numberOfActions, hiddenLayerConfig, replayMemoryCapacity, learningRate,
+                0f, 2f, 1,60, 0.012f, 4)
         aiController.name = "THE ULTIMATE STICK BALANCER"
         aiController.isDebugEnabled = true
     }
 
-    fun getCurrentState(): FloatArray = floatArrayOf(reduceIntervalRadians(joint.jointAngle)-Math.PI.toF(), joint.jointSpeed, base.linearVelocity.x)
+    fun getCurrentState(): FloatArray = floatArrayOf(reduceIntervalRadians(joint.jointAngle)-Math.PI.toF(), joint.jointSpeed, base.linearVelocity.x/maxSpeed)
     fun reduceIntervalRadians(ang: Float): Float {
         var theta = ang
         while (theta < 0) theta += 2f * Math.PI.toF()
@@ -146,7 +145,7 @@ class Scene10(internal val game: JoltSphereMain) : Screen {
                     2 -> commandRight(dt)
                 }
                 for (i in 1..1) {
-                    aiController.trainFromReplayMemory(minibatchSize, learningRate, discountFac)
+                    aiController.trainFromReplayMemory(minibatchSize, discountFac)
                 }
             } else {
                 if (Gdx.input.isKeyPressed(Keys.LEFT)) commandLeft(dt)
@@ -177,7 +176,7 @@ class Scene10(internal val game: JoltSphereMain) : Screen {
         else currentReward = -0.1f
         //currentReward = 0f
         if (actualAngle < 3 || actualAngle > 357) currentReward += 5
-        //if (actualAngle < 180 + 13 && actualAngle > 347 - 180) currentReward -= 4
+        if (actualAngle < 180 + 13 && actualAngle > 347 - 180) currentReward -= 1
         //if (currentReward < 0) currentReward = -0.2f
     }
 
@@ -202,11 +201,11 @@ class Scene10(internal val game: JoltSphereMain) : Screen {
         else base.setLinearVelocity(0f, base.linearVelocity.y)
     }
     //val speed = 6f
-    val maxSpeed = 30f
+    val accel = 35
     //fun moveLeft(dt: Float) = base.setLinearVelocity(-speed, 0f)
     //fun moveRight(dt: Float) = base.setLinearVelocity(speed, 0f)
-    fun moveLeft(dt: Float) { if (base.linearVelocity.x > -maxSpeed) base.setLinearVelocity(base.linearVelocity.x - 25*dt, 0f) }
-    fun moveRight(dt: Float) { if (base.linearVelocity.x < maxSpeed) base.setLinearVelocity(base.linearVelocity.x + 25*dt, 0f) }
+    fun moveLeft(dt: Float) { if (base.linearVelocity.x > -maxSpeed) base.setLinearVelocity(base.linearVelocity.x - accel*dt, 0f) }
+    fun moveRight(dt: Float) { if (base.linearVelocity.x < maxSpeed) base.setLinearVelocity(base.linearVelocity.x + accel*dt, 0f) }
 
     /** Rounds a value to float place */
     fun Float.round(pos: Float): Float = Math.round(this*(1/pos))/Math.round(1f/pos).toF()
@@ -239,11 +238,11 @@ class Scene10(internal val game: JoltSphereMain) : Screen {
         debugRender.render(world, game.phys2DCam.combined)
 
         game.batch.begin()
-        game.font.draw(game.batch, "" + Gdx.graphics.framesPerSecond, game.width * 0.27f, game.height * 0.85f)
+        game.font.draw(game.batch, "" + Gdx.graphics.framesPerSecond, game.width * 0.4f, game.height * 0.86f)
         game.font.draw(game.batch, "R = " + Math.round(currentReward*1000f)/1000f, game.width * 0.1f, game.height * 0.1f)
         game.font.draw(game.batch, "R/S = " + Math.round(joint.jointSpeed*1000f)/1000f, game.width * 0.8f, game.height * 0.1f)
         game.font.draw(game.batch,
-            "Current State: ${getCurrentState()[0].round(0.1f)} ${getCurrentState()[1].round(0.1f)}", 20f, game.height - 110f)
+            "Current State: A@${getCurrentState()[0].round(0.1f)} RS@${getCurrentState()[1].round(0.1f)} BS@${getCurrentState()[2].round(0.1f)}", 20f, game.height - 110f)
         game.font.draw(game.batch,
             "Q-Value Predictions: ${aiController.latestQValuePredictions[0].round(0.1f)} ${aiController.latestQValuePredictions[1].round(0.1f)} ${aiController.latestQValuePredictions[2].round(0.1f)}",
                 20f, game.height - 300f)

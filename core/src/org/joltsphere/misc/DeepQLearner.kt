@@ -1,5 +1,7 @@
 package org.joltsphere.misc
 
+import org.deeplearning4j.exception.DeepLearningException
+
 /** A fully loaded deep Q-learning model, complete with action selection and training from replay memory!
  * - To implement this machine learning algorithim into an environment, simply execute the "updateStateAndRewardThenSelectAction(...)"
  *  function once per time step. Then, whenever you feel like it, train the neural network using the "trainFromReplayMemory(...)" function to increase '
@@ -18,16 +20,16 @@ package org.joltsphere.misc
  * //@param explorationLength How many time-steps the explored move will be repeated.
  */
 class DeepQLearner(val numberOfStateInputs: Int, val numberOfActions: Int, val hiddenLayerConfiguration: IntArray,
-                   val replayMemoryCapacity: Int,
+                   val replayMemoryCapacity: Int, val learningRate: Float,
                    var rewardMin: Float, var rewardMax: Float,
                    val expLengthMin: Int, val expLengthMax: Int, val expProbMin: Float, expComboMax: Int) {
 
-    val neuralNetwork = DL4JNeuralNetwork(numberOfStateInputs, numberOfActions, hiddenLayerConfiguration)
+    val neuralNetwork = DL4JNeuralNetwork(numberOfStateInputs, numberOfActions, hiddenLayerConfiguration, learningRate)
     val replayMemory = ArrayList<Transition>()
     private var lastState = FloatArray(numberOfStateInputs)
     private var lastAction = 0
     var currentReward = 0f
-    var explorationTimer = 0
+    var explorationTimer = 9
     var expComboCount = 0
     var isExploring = false
 
@@ -72,7 +74,7 @@ class DeepQLearner(val numberOfStateInputs: Int, val numberOfActions: Int, val h
             lastAction = lastExternalAction
             isNextActionExternal = false // resets external action system
         }
-        else if (explorationTimer != 0) {
+        else if (explorationTimer > 1) {
             explorationTimer--
             // last action stays the same until exploration is over
         }
@@ -120,7 +122,7 @@ class DeepQLearner(val numberOfStateInputs: Int, val numberOfActions: Int, val h
      *  set it too low, and the model will take to long to converge.
      * @param discountFactor The model's focus on long term reward versus short term reward. Set this between 0 and 1, but it's best around 0.9 and above.
      */
-    fun trainFromReplayMemory(minibatchSize: Int, learningRate: Float, discountFactor: Float) {
+    fun trainFromReplayMemory(minibatchSize: Int, discountFactor: Float) {
         if (minibatchSize > replayMemoryCapacity) // make sure training will even take place
             throw IllegalArgumentException("silly boy, the minibatch size $minibatchSize > $replayMemoryCapacity replay memory capacity")
         if (minibatchSize <= replayMemory.size) { // if enough training data has been acquired to satisfy a minibatch training sequence

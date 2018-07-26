@@ -164,10 +164,10 @@ class Scene11(internal val game: JoltSphereMain) : Screen {
         jointKneeRear.setLimits(5f.toRadians(), 175f.toRadians())
         jointKneeFront.setLimits(5f.toRadians(), 175f.toRadians())
 
-        aiHipRear = DeepQLearner(getCurrentState().size, numberOfActions, hiddenLayerConfig, replayMemoryCapacity, 0f,0f,1,1,0f,1)
-        aiHipFront = DeepQLearner(getCurrentState().size, numberOfActions, hiddenLayerConfig, replayMemoryCapacity,  0f,0f,1,1,0f,1)
-        aiKneeRear = DeepQLearner(getCurrentState().size, numberOfActions, hiddenLayerConfig, replayMemoryCapacity,  0f,0f,1,1,0f,1)
-        aiKneeFront = DeepQLearner(getCurrentState().size, numberOfActions, hiddenLayerConfig, replayMemoryCapacity,  0f,0f,1,1,0f,1)
+        aiHipRear = DeepQLearner(getCurrentState().size, numberOfActions, hiddenLayerConfig, replayMemoryCapacity, learningRate, 0f,0f,1,1,0f,1)
+        aiHipFront = DeepQLearner(getCurrentState().size, numberOfActions, hiddenLayerConfig, replayMemoryCapacity, learningRate,  0f,0f,1,1,0f,1)
+        aiKneeRear = DeepQLearner(getCurrentState().size, numberOfActions, hiddenLayerConfig, replayMemoryCapacity, learningRate,  0f,0f,1,1,0f,1)
+        aiKneeFront = DeepQLearner(getCurrentState().size, numberOfActions, hiddenLayerConfig, replayMemoryCapacity, learningRate,  0f,0f,1,1,0f,1)
         aiHipRear.name = "Hip-rear"
         aiHipFront.name = "Hip-front"
         aiKneeRear.name = "Knee-rear"
@@ -260,10 +260,10 @@ class Scene11(internal val game: JoltSphereMain) : Screen {
                 command(aiKneeFront.updateStateAndRewardThenSelectAction(getCurrentState(), currentReward, false, isExplorationEnabled), jointKneeFront)
                 //printMatrix(Array(1, {getCurrentState()}))
                     for (i in 1..6) {
-                        aiHipRear.trainFromReplayMemory(minibatchSize, learningRate, discountFac)
-                        aiHipFront.trainFromReplayMemory(minibatchSize, learningRate, discountFac)
-                        aiKneeRear.trainFromReplayMemory(minibatchSize, learningRate, discountFac)
-                        aiKneeFront.trainFromReplayMemory(minibatchSize, learningRate, discountFac)
+                        aiHipRear.trainFromReplayMemory(minibatchSize, discountFac)
+                        aiHipFront.trainFromReplayMemory(minibatchSize, discountFac)
+                        aiKneeRear.trainFromReplayMemory(minibatchSize, discountFac)
+                        aiKneeFront.trainFromReplayMemory(minibatchSize, discountFac)
                     }
                     cost = -1f //(aiHipFront.neuralNetwork.cost + aiHipRear.neuralNetwork.cost + aiKneeFront.neuralNetwork.cost + aiKneeRear.neuralNetwork.cost) / 4f
                     if (isOverwritingPreviousSave && writeTime > 3f) {

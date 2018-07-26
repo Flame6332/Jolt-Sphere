@@ -10,6 +10,7 @@
 package org.joltsphere.misc
 
 import org.deeplearning4j.nn.api.OptimizationAlgorithm
+import org.deeplearning4j.nn.conf.LearningRatePolicy
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration
 import org.deeplearning4j.nn.conf.distribution.UniformDistribution
@@ -23,7 +24,7 @@ import org.nd4j.linalg.api.ndarray.INDArray
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.lossfunctions.LossFunctions
 
-class DL4JNeuralNetwork(val numberOfInputs: Int, val numberOfOutputs: Int, val hiddenLayerConfiguration: IntArray) {
+class DL4JNeuralNetwork(val numberOfInputs: Int, val numberOfOutputs: Int, val hiddenLayerConfiguration: IntArray, val learningRate: Float) {
 
     val net: MultiLayerNetwork
 
@@ -35,7 +36,8 @@ class DL4JNeuralNetwork(val numberOfInputs: Int, val numberOfOutputs: Int, val h
         builder.optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
         builder.biasInit(0.01)
         builder.miniBatch(false)
-        builder.learningRate = 0.0002
+        builder.learningRate = learningRate.toDouble()
+        //builder.learningRate = 0.0002
         builder.regularization(false)//.l2(0.0000001)//.dropOut(0.5)
 
         // neural network layer comp
@@ -172,7 +174,7 @@ fun main(args: Array<String>) {
     labels.putScalar(intArrayOf(3, 0), 1)
     labels.putScalar(intArrayOf(3, 1), 0)
 
-    val neuralNet = DL4JNeuralNetwork(2, 2, intArrayOf(4))
+    val neuralNet = DL4JNeuralNetwork(2, 2, intArrayOf(4), 0.001f)
 
     println(neuralNet.net.output(input))
     for (i in 1..1000) neuralNet.backpropagate(input.toMatrix(), labels.toMatrix())
