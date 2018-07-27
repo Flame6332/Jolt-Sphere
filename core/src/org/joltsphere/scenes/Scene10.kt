@@ -39,7 +39,7 @@ class Scene10(internal val game: JoltSphereMain) : Screen {
     val replayMemoryCapacity = 10 * 30
     val minibatchSize = 16
     val explorationLength = 2
-    val hiddenLayerConfig = intArrayOf(700,700)
+    val hiddenLayerConfig = intArrayOf(400,300)
     val numberOfActions = 3
     val actionLength = 1/30f
     var timeLeftUntilNextAction = actionLength
@@ -175,7 +175,7 @@ class Scene10(internal val game: JoltSphereMain) : Screen {
         if (currentReward > 0) currentReward *= 0.1f
         else currentReward = -0.1f
         //currentReward = 0f
-        if (actualAngle < 3 || actualAngle > 357) currentReward += 5
+        if ((actualAngle < 3 || actualAngle > 357) && joint.jointSpeed.abs() < 1.1f) currentReward += 5
         if (actualAngle < 180 + 13 && actualAngle > 347 - 180) currentReward -= 1
         //if (currentReward < 0) currentReward = -0.2f
     }
