@@ -10,12 +10,10 @@ class ArenaSpace(var width: Int, var height: Int) : ArenaPlayerEventListener {
 
     var players: Array<ArenaPlayer> = Array<ArenaPlayer>()
 
-    init {
-
-    }
+    init {}
 
     fun addPlayer(arenaPlayer: ArenaPlayer) {
-        arenaPlayer.event = this
+        arenaPlayer.event = this // sets this extension of an event listener to
         players.add(arenaPlayer)
     }
 
