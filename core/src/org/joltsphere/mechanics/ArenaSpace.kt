@@ -19,9 +19,9 @@ class ArenaSpace(var width: Int, var height: Int) : ArenaPlayerEventListener {
 
     fun update(dt: Float, contacts: Array<Int>) {
 
-        for (i in 1..players.size) {
-            players.get(i - 1).update(contacts.get(i - 1), dt, width, height)
-       }
+        for (i in 0 until players.size) {
+            players.get(i).update(contacts.get(i), dt, width, height)
+        }
 
     }
 

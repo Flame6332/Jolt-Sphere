@@ -8,7 +8,7 @@ import com.badlogic.gdx.utils.Array
     */
 class ArenaContactListener(playerCount: Int) : ContactListener {
 
-    var playerContacts: Array<Int> = Array<Int>()
+    var playerContacts: Array<Int> = Array()
 
     var pvpContact: Byte = 0
 
@@ -52,6 +52,7 @@ class ArenaContactListener(playerCount: Int) : ContactListener {
     override fun postSolve(contact: Contact, impulse: ContactImpulse) {}
 
     private fun isContacting(f1: String, f2: String): Boolean {
+        @Suppress("RedundantIf")
         if (bA.userData == f1 && bB.userData == f2)
             return true
         else if (bA.userData == f2 && bB.userData == f1)

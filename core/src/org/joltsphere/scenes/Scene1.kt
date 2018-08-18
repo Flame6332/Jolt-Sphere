@@ -67,6 +67,7 @@ class Scene1 (internal val game: JoltSphereMain) : Screen {
             timer -= dt
         }
 
+        // TODO move this garbage out of here so that implementation is consisting! >;(
         if (contLis.pvpContact > 0) {
             arena.players.get(0).contactingOtherPlayer(arena.players.get(1))
             arena.players.get(1).contactingOtherPlayer(arena.players.get(0))
